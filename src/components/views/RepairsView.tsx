@@ -1,0 +1,425 @@
+import React, { useState } from 'react';
+import {
+  ShieldAlert,
+  Phone,
+  Send,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  Camera,
+  FileText,
+  User,
+  Wrench,
+  ChevronRight,
+  Upload,
+  X,
+  ImageIcon,
+} from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { useRepairsStore } from '../../store/useRepairsStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useToastStore } from '../../store/useToastStore';
+
+const equipmentTypes = [
+  'Hybrid Inverter',
+  'Lithium Battery Pack',
+  'Gel Deep Cycle Battery',
+  'Solar Panels Array',
+  'MPPT Charge Controller',
+  'Wiring & AC/DC Protection Fuse',
+  'Solar Water Heater Tank',
+  'Submersible Solar Pump',
+];
+
+interface RepairsViewProps {
+  openAuthModal?: () => void;
+}
+
+export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal }) => {
+  const { t } = useLanguage();
+  const { repairRequests, createRepairTicket } = useRepairsStore();
+  const { user } = useAuthStore();
+  const showToast = useToastStore((s) => s.showToast);
+
+  const [customerName, setCustomerName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [region, setRegion] = useState('Dar es Salaam');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [selectedEquipment, setSelectedEquipment] = useState('Hybrid Inverter');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<'Normal' | 'Urgent'>('Urgent');
+
+  // Device Photo Upload state
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoFileName, setPhotoFileName] = useState<string>('');
+
+  const [submittedTicketRef, setSubmittedTicketRef] = useState<string | null>(null);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 8 * 1024 * 1024) {
+        showToast({
+          title: 'Ukubwa wa Picha Umezidi (File too large)',
+          message: 'Tafadhali chagua picha iliyo chini ya 8MB.',
+          type: 'warning',
+        });
+        return;
+      }
+      setPhotoFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoUrl(null);
+    setPhotoFileName('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      showToast({
+        title: 'Ingia kwenye Akaunti (Login Required) 🔒',
+        message: 'Tafadhali ingia au jisajili kwanza ili kuwasilisha ombi la matengenezo.',
+        type: 'warning',
+      });
+      openAuthModal?.();
+      return;
+    }
+
+    if (!description.trim()) return;
+
+    const ticket = await createRepairTicket({
+      customerName: customerName || user.name,
+      phone: phone || user.phone || '',
+      region,
+      streetAddress,
+      equipmentType: selectedEquipment,
+      description,
+      priority,
+      hasPhoto: !!photoUrl,
+      photoUrl: photoUrl || undefined,
+    });
+
+    setSubmittedTicketRef(ticket.requestNumber);
+    setDescription('');
+    setPhotoUrl(null);
+    setPhotoFileName('');
+
+    showToast({
+      title: 'Tiketi ya Matengenezo Imesajiliwa! 🛠️',
+      message: `Tiketi #${ticket.requestNumber} imetumwa kikamilifu. Wataalamu wetu watakutafuta hivi punde.`,
+      type: 'success',
+    });
+  };
+
+  return (
+    <div className="space-y-6 sm:space-y-8 pb-12">
+      {/* Hotline Banner */}
+      <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-rose-600 via-rose-700 to-rose-800 text-white flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 shadow-lg">
+        <div className="space-y-1 text-center sm:text-left">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold backdrop-blur-md">
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-300" />
+            <span>24/7 Rapid Emergency Dispatch Team</span>
+          </div>
+          <h1 className="text-base sm:text-lg font-black">{t('repairsTitle')}</h1>
+          <p className="text-xs text-rose-100">{t('repairsSubtitle')}</p>
+        </div>
+
+        <a
+          href="tel:+255622359874"
+          className="px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-white text-rose-700 hover:bg-rose-50 font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shrink-0"
+        >
+          <Phone className="w-3.5 h-3.5" />
+          <span>{t('emergencyHotline')}</span>
+        </a>
+      </div>
+
+      {/* Main Repair Logging Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+        <div className="lg:col-span-2 space-y-5">
+          <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-5">
+            <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span>Report Faulty Solar Equipment</span>
+            </h2>
+
+            {submittedTicketRef && (
+              <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs space-y-1">
+                <p className="font-bold">
+                  ✓ Ticket Logger Created! Reference: #{submittedTicketRef}
+                </p>
+                <p className="text-[11px]">
+                  Emergency dispatch ETA: {priority === 'Urgent' ? '2 - 4 Hours' : '24 Hours'}.
+                </p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              {/* Equipment Selection Chips */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  {t('equipmentType')} *
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {equipmentTypes.map((eq) => (
+                    <button
+                      key={eq}
+                      type="button"
+                      onClick={() => setSelectedEquipment(eq)}
+                      className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${
+                        selectedEquipment === eq
+                          ? 'bg-amber-500 text-white shadow-sm'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                      }`}
+                    >
+                      {eq}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Priority Selection */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Dispatch Priority Level *
+                </label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setPriority('Normal')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition-colors ${
+                      priority === 'Normal'
+                        ? 'bg-amber-500 text-white border-amber-500'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    {t('normalPriority')} (24 Hours)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPriority('Urgent')}
+                    className={`p-2.5 rounded-xl border text-xs font-bold transition-colors ${
+                      priority === 'Urgent'
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-sm shadow-rose-600/20'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    🚨 Urgent Emergency (2-4h Response)
+                  </button>
+                </div>
+              </div>
+
+              {/* Contact Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    {t('fullName')} *
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    {t('phoneNumber')} *
+                  </label>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    {t('region')} *
+                  </label>
+                  <input
+                    type="text"
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    {t('streetAddress')} *
+                  </label>
+                  <input
+                    type="text"
+                    value={streetAddress}
+                    onChange={(e) => setStreetAddress(e.target.value)}
+                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Problem Description */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  {t('problemDescription')} *
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2.5}
+                  placeholder="E.g., Inverter showing Error Code E04, screen flickering, smells burnt..."
+                  className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  required
+                />
+              </div>
+
+              {/* Real Device Photo Upload */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Weka Picha ya Vifaa Vilivyoharibika (Upload Equipment Photo)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">(Optional)</span>
+                </label>
+
+                {photoUrl ? (
+                  <div className="relative p-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/5 flex items-center gap-3">
+                    <img
+                      src={photoUrl}
+                      alt="Equipment fault preview"
+                      className="w-16 h-16 rounded-xl object-cover border border-amber-500/40 shadow-sm shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 text-xs">
+                      <p className="font-bold text-slate-800 dark:text-slate-100 truncate">
+                        {photoFileName || 'Equipment Photo'}
+                      </p>
+                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Picha Imeingizwa Kikamilifu</span>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      className="p-1.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-600 dark:bg-rose-950 dark:hover:bg-rose-900 transition-colors shrink-0"
+                      title="Ondoa Picha"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 cursor-pointer transition-colors group">
+                    <div className="p-2.5 rounded-full bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform mb-2">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                      Bonyeza hapa kupakia picha kutoka kwenye simu/kifaa chako
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">
+                      Inasaidia picha za PNG, JPG au WEBP (Max 8MB)
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-rose-600/20 flex items-center justify-center gap-2"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{t('submitRepairTicket')}</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Live Repair Status Tracker Side Panel */}
+        <div className="space-y-3">
+          <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-500" />
+            <span>{t('repairStatusTracker')}</span>
+          </h2>
+
+          <div className="space-y-3">
+            {repairRequests.map((req) => (
+              <div
+                key={req.id}
+                className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black font-mono text-amber-600 dark:text-amber-400">
+                    #{req.requestNumber}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      req.priority === 'Urgent'
+                        ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400'
+                        : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
+                    }`}
+                  >
+                    {req.priority}
+                  </span>
+                </div>
+
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {req.equipmentType}
+                </p>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  "{req.description}"
+                </p>
+
+                {req.photoUrl && (
+                  <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80">
+                    <img
+                      src={req.photoUrl}
+                      alt="Fault photo"
+                      className="w-10 h-10 rounded-lg object-cover border border-slate-300 dark:border-slate-700 shrink-0"
+                    />
+                    <span className="text-[10px] text-slate-600 dark:text-slate-300 font-medium">
+                      Picha ya Hitilafu Imeambatanishwa
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-[10px] sm:text-[11px] font-semibold space-y-0.5">
+                  <p className="text-slate-700 dark:text-slate-300">
+                    Status: <strong className="text-amber-600 dark:text-amber-400">{req.status}</strong>
+                  </p>
+                  {req.assignedTechnician && (
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Dispatched Tech: <strong className="text-slate-900 dark:text-slate-100">{req.assignedTechnician}</strong>
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

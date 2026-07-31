@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <!-- Dark blue theme gradient for the ring -->
+    <linearGradient id="ringBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e5488" />
+      <stop offset="100%" stop-color="#143c66" />
+    </linearGradient>
+
+    <!-- Sun gradient -->
+    <linearGradient id="sunGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+
+    <!-- Secondary cyan ray gradient -->
+    <linearGradient id="cyanRay" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7dd3fc" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+
+    <!-- Orange ray gradient -->
+    <linearGradient id="orangeRay" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <!-- Dark blue bolt gradient -->
+    <linearGradient id="boltBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d5287" />
+      <stop offset="100%" stop-color="#0f3459" />
+    </linearGradient>
+
+    <!-- Path for Top Text: YMA ENERGY GROUP -->
+    <path id="textArcTop" d="M 70, 300 A 230 230 0 1 1 530, 300" fill="none" />
+
+    <!-- Path for Bottom Text: ELECTRICAL & SOLAR POWER SYSTEM -->
+    <path id="textArcBottom" d="M 530, 300 A 230 230 0 0 1 70, 300" fill="none" />
+  </defs>
+
+  <!-- Outer background circle -->
+  <circle cx="300" cy="300" r="285" fill="none" stroke="#1c4e7f" stroke-width="4" />
+  
+  <!-- Main Blue Ring -->
+  <circle cx="300" cy="300" r="268" fill="url(#ringBlue)" stroke="#1c4e7f" stroke-width="8" />
+
+  <!-- Inner border line for Blue Ring -->
+  <circle cx="300" cy="300" r="192" fill="#ffffff" stroke="#1c4e7f" stroke-width="6" />
+
+  <!-- Inner concentric accent lines on blue ring -->
+  <circle cx="300" cy="300" r="280" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.9" />
+  <circle cx="300" cy="300" r="256" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.9" />
+  <circle cx="300" cy="300" r="202" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.9" />
+
+  <!-- TOP TEXT: YMA ENERGY GROUP -->
+  <text font-family="'Impact', 'Arial Black', sans-serif" font-weight="900" font-size="44" fill="#ffffff" letter-spacing="3">
+    <textPath href="#textArcTop" startOffset="50%" text-anchor="middle">
+      YMA ENERGY GROUP
+    </textPath>
+  </text>
+
+  <!-- BOTTOM TEXT: ELECTRICAL & SOLAR POWER SYSTEM -->
+  <text font-family="'Impact', 'Arial Black', sans-serif" font-weight="900" font-size="28" fill="#ffffff" letter-spacing="1.5">
+    <textPath href="#textArcBottom" startOffset="50%" text-anchor="middle">
+      ELECTRICAL &amp; SOLAR POWER SYSTEM
+    </textPath>
+  </text>
+
+  <!-- CENTER EMBLEM CONTENT -->
+  <g id="center-emblem">
+    <!-- Cyan Secondary Rays -->
+    <g fill="url(#cyanRay)">
+      <!-- Alternating triangular rays around center -->
+      <polygon points="300,300 235,110 270,120" />
+      <polygon points="300,300 330,110 365,130" />
+      <polygon points="300,300 420,165 440,200" />
+      <polygon points="300,300 460,250 465,290" />
+      <polygon points="300,300 440,345 420,380" />
+      <polygon points="300,300 355,425 325,445" />
+      <polygon points="300,300 265,445 235,425" />
+      <polygon points="300,300 175,385 155,350" />
+      <polygon points="300,300 135,295 138,255" />
+      <polygon points="300,300 155,195 180,160" />
+    </g>
+
+    <!-- Orange/Yellow Primary Rays -->
+    <g fill="url(#orangeRay)">
+      <polygon points="300,300 290,92 315,92" />
+      <polygon points="300,300 380,122 400,147" />
+      <polygon points="300,300 445,200 455,230" />
+      <polygon points="300,300 455,300 440,330" />
+      <polygon points="300,300 395,385 370,410" />
+      <polygon points="300,300 300,455 280,445" />
+      <polygon points="300,300 205,420 185,395" />
+      <polygon points="300,300 140,335 130,305" />
+      <polygon points="300,300 140,225 155,195" />
+      <polygon points="300,300 200,145 225,125" />
+    </g>
+
+    <!-- Sun Circle -->
+    <circle cx="280" cy="275" r="95" fill="url(#sunGradient)" stroke="#ffffff" stroke-width="4" />
+
+    <!-- Globe Grid Lines inside Sun -->
+    <g stroke="#ffffff" stroke-width="1.8" fill="none" opacity="0.85">
+      <circle cx="280" cy="275" r="75" />
+      <!-- Latitude lines -->
+      <ellipse cx="280" cy="275" rx="75" ry="25" />
+      <ellipse cx="280" cy="275" rx="75" ry="50" />
+      <line x1="205" y1="275" x2="355" y2="275" />
+      <!-- Longitude lines -->
+      <ellipse cx="280" cy="275" rx="25" ry="75" />
+      <ellipse cx="280" cy="275" rx="50" ry="75" />
+      <line x1="280" y1="200" x2="280" y2="350" />
+    </g>
+
+    <!-- Dark Blue Lightning Bolt -->
+    <!-- Outer white outline / backing for bolt -->
+    <path d="M 390 180 L 335 290 H 375 L 305 425 L 350 290 H 315 Z" fill="none" stroke="#ffffff" stroke-width="12" stroke-linejoin="round" />
+    <!-- Main Bolt body -->
+    <path d="M 390 180 L 335 290 H 375 L 305 425 L 350 290 H 315 Z" fill="url(#boltBlue)" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" />
+    <!-- Inner white accent line on bolt -->
+    <path d="M 380 195 L 338 280 H 365 L 320 380" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.9" />
+  </g>
+</svg>
