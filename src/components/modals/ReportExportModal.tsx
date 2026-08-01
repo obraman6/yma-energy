@@ -34,7 +34,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold">Business Analytics Report Export</h2>
-              <p className="text-xs text-amber-400">YMA Energy Tanzania Executive Summary</p>
+              <p className="text-xs text-amber-400">YMA ENERGY GROUP Executive Summary</p>
             </div>
           </div>
           <button

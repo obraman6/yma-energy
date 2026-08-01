@@ -23,6 +23,7 @@ import {
   Send,
   ExternalLink,
   Cpu,
+  Camera,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -61,6 +62,34 @@ export const AccountView: React.FC<AccountViewProps> = ({
   const { theme, toggleTheme } = useTheme();
   const { user, login, register, resetPassword, logout, updateProfile } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast({
+        title: 'Picha ni Kubwa Mno! ⚠️',
+        message: 'Tafadhali chagua picha yenye ukubwa chini ya 5MB.',
+        type: 'error',
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      await updateProfile({ avatarUrl: dataUrl });
+      showToast({
+        title: 'Picha ya Profaili Imesasishwa! 📸',
+        message: 'Picha yako mpya ya profaili imehifadhiwa kutoka kwenye kifaa chako.',
+        type: 'success',
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const orders = useOrdersStore((s) => s.orders) || [];
   const savedProductIds = useWishlistStore((s) => s.savedProductIds) || [];
@@ -413,17 +442,33 @@ export const AccountView: React.FC<AccountViewProps> = ({
       {/* Profile Header Card */}
       <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3.5">
-          {user.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt={user.name}
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover ring-2 ring-amber-500/30 shrink-0"
+          <div className="relative group shrink-0">
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover ring-2 ring-amber-500/30"
+              />
+            ) : (
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 text-white font-black text-xl flex items-center justify-center">
+                {user.name.charAt(0)}
+              </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              title="Weka/Badilisha picha kutoka kwenye kifaa chako (Upload Photo)"
+              className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-amber-500 text-white shadow-md hover:bg-amber-600 transition-transform active:scale-95"
+            >
+              <Camera className="w-3.5 h-3.5" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleProfileImageUpload}
+              className="hidden"
             />
-          ) : (
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 text-white font-black text-xl flex items-center justify-center shrink-0">
-              {user.name.charAt(0)}
-            </div>
-          )}
+          </div>
 
           <div>
             <div className="flex items-center gap-2">

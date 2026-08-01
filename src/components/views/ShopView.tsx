@@ -15,6 +15,8 @@ import { useProductStore } from '../../store/useProductStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { useCartStore } from '../../store/useCartStore';
 import { Product, ProductCategory } from '../../types';
+import { ConcentricSpinner } from '../common/ConcentricSpinner';
+import { getStockStatus } from '../../utils/stockUtils';
 
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
@@ -36,7 +38,7 @@ const categoriesList: (ProductCategory | 'All')[] = [
 ];
 
 export const ShopView: React.FC<ShopViewProps> = ({ openProductModal, openAuthModal }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuthStore();
   const {
     products,
@@ -46,6 +48,7 @@ export const ShopView: React.FC<ShopViewProps> = ({ openProductModal, openAuthMo
     setSearchQuery,
     sortBy,
     setSortBy,
+    isLoading,
   } = useProductStore();
 
   const { toggleWishlist, isInWishlist } = useWishlistStore();
@@ -186,7 +189,15 @@ export const ShopView: React.FC<ShopViewProps> = ({ openProductModal, openAuthMo
       </div>
 
       {/* Product Grid */}
-      {filtered.length === 0 ? (
+      {isLoading ? (
+        <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <ConcentricSpinner
+            size="lg"
+            text={language === 'sw' ? 'Inapakia bidhaa kutoka kwenye duka...' : 'Loading products...'}
+            subtext={language === 'sw' ? 'Tafadhali subiri kidogo ⏳' : 'Please wait a moment ⏳'}
+          />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="p-12 text-center space-y-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
           <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
             No products match your current filters.
@@ -251,15 +262,17 @@ export const ShopView: React.FC<ShopViewProps> = ({ openProductModal, openAuthMo
                         <span>{prod.rating.toFixed(1)}</span>
                       </div>
 
-                      <span
-                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full shrink-0 ${
-                          prod.stock > 0
-                            ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400'
-                            : 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-400'
-                        }`}
-                      >
-                        {prod.stock > 0 ? t('inStock') : t('outOfStock')}
-                      </span>
+                      {(() => {
+                        const stockInfo = getStockStatus(prod.stock, prod.lowStockThreshold);
+                        const label = language === 'sw' ? stockInfo.labelSw : stockInfo.labelEn;
+                        return (
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 border ${stockInfo.badgeBg} ${stockInfo.badgeText} ${stockInfo.badgeBorder}`}
+                          >
+                            {label}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     {/* Product Title (Max 2 lines) */}
@@ -288,11 +301,11 @@ export const ShopView: React.FC<ShopViewProps> = ({ openProductModal, openAuthMo
                 <div className="pt-1">
                   <button
                     onClick={() => handleAddToCart(prod)}
-                    disabled={prod.stock === 0}
-                    className="w-full h-[28px] rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-extrabold text-[11px] hover:bg-amber-500 dark:hover:bg-amber-500 dark:hover:text-white flex items-center justify-center gap-1 transition-colors shadow-sm disabled:opacity-50"
+                    disabled={prod.stock <= 0}
+                    className="w-full h-[28px] rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-extrabold text-[11px] hover:bg-amber-500 dark:hover:bg-amber-500 dark:hover:text-white flex items-center justify-center gap-1 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ShoppingCart className="w-4 h-4" />
-                    <span>{t('addToCart')}</span>
+                    <span>{prod.stock <= 0 ? 'Stok Umeisha' : t('addToCart')}</span>
                   </button>
                 </div>
               </div>

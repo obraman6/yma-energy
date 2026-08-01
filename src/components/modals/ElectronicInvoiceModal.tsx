@@ -63,7 +63,7 @@ export const ElectronicInvoiceModal: React.FC<ElectronicInvoiceModalProps> = ({
           <div className="grid grid-cols-2 gap-4 text-xs">
             {/* Vendor */}
             <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 space-y-1">
-              <p className="font-bold text-slate-900 dark:text-slate-100">YMA ENERGY TANZANIA LTD</p>
+              <p className="font-bold text-slate-900 dark:text-slate-100">YMA ENERGY GROUP</p>
               <p className="text-slate-500 dark:text-slate-400">TIN: 142-998-102</p>
               <p className="text-slate-500 dark:text-slate-400">Plot 44, Mikocheni B, Dar es Salaam</p>
               <p className="text-slate-500 dark:text-slate-400">Helpline: +255 622 359 874</p>

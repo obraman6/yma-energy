@@ -22,6 +22,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   const [category, setCategory] = useState<ProductCategory>('Solar Panels');
   const [priceTzs, setPriceTzs] = useState(350000);
   const [stock, setStock] = useState(25);
+  const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [specifications, setSpecifications] = useState('');
   const [description, setDescription] = useState('');
   const [warrantyPeriod, setWarrantyPeriod] = useState('25 Years Performance Warranty');
@@ -37,6 +38,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       setCategory(productToEdit.category);
       setPriceTzs(productToEdit.priceTzs);
       setStock(productToEdit.stock);
+      setLowStockThreshold(productToEdit.lowStockThreshold ?? 5);
       setSpecifications(productToEdit.specifications);
       setDescription(productToEdit.description || '');
       setWarrantyPeriod(productToEdit.warrantyPeriod || '25 Years Performance Warranty');
@@ -47,6 +49,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       setCategory('Solar Panels');
       setPriceTzs(450000);
       setStock(20);
+      setLowStockThreshold(5);
       setSpecifications('Monocrystalline Grade-A Cell, 25-Year Performance Guarantee');
       setDescription('High efficiency Tier-1 certified solar component manufactured for Tropical East African climate resilience.');
       setWarrantyPeriod('25 Years Performance Warranty');
@@ -91,6 +94,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
         category,
         priceTzs: Number(priceTzs),
         stock: Number(stock),
+        lowStockThreshold: Number(lowStockThreshold),
         specifications,
         description,
         warrantyPeriod,
@@ -108,6 +112,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
         category,
         priceTzs: Number(priceTzs),
         stock: Number(stock),
+        lowStockThreshold: Number(lowStockThreshold),
         specifications,
         description,
         warrantyPeriod,
@@ -196,10 +201,10 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Stock Quantity (Idadi ya Akiba) *
+                Stock (Idadi) *
               </label>
               <input
                 type="number"
@@ -211,14 +216,28 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             </div>
 
             <div>
+              <label className="font-bold text-amber-600 dark:text-amber-400 block mb-1">
+                Low Stock Threshold *
+              </label>
+              <input
+                type="number"
+                value={lowStockThreshold}
+                onChange={(e) => setLowStockThreshold(Number(e.target.value))}
+                placeholder="5"
+                className="w-full p-2.5 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 text-slate-900 dark:text-slate-100 font-mono font-bold"
+                required
+              />
+            </div>
+
+            <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Warranty Period (Muda wa Garanti)
+                Warranty Period
               </label>
               <input
                 type="text"
                 value={warrantyPeriod}
                 onChange={(e) => setWarrantyPeriod(e.target.value)}
-                placeholder="E.g. 25 Years Performance Warranty"
+                placeholder="E.g. 25 Years"
                 className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>

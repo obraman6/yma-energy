@@ -15,6 +15,7 @@ interface ServicesState {
   services: SolarService[];
   serviceRequests: ServiceRequest[];
   isFirebaseSynced: boolean;
+  isLoading: boolean;
 
   initFirebaseSync: () => void;
 
@@ -29,9 +30,10 @@ interface ServicesState {
 }
 
 export const useServicesStore = create<ServicesState>((set, get) => ({
-  services: [],
+  services: initialServices,
   serviceRequests: [],
   isFirebaseSynced: false,
+  isLoading: true,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -42,10 +44,17 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     onSnapshot(
       servicesRef,
       (snapshot) => {
-        const remoteServices: SolarService[] = snapshot.docs.map((d) => d.data() as SolarService);
-        set({ services: remoteServices });
+        if (snapshot.docs.length > 0) {
+          const remoteServices: SolarService[] = snapshot.docs.map((d) => d.data() as SolarService);
+          set({ services: remoteServices, isLoading: false });
+        } else {
+          set({ services: initialServices, isLoading: false });
+        }
       },
-      (err) => console.error('Firestore services sync error:', err)
+      (err) => {
+        console.error('Firestore services sync error:', err);
+        set({ isLoading: false });
+      }
     );
 
     // Sync Service Requests
@@ -53,8 +62,10 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     onSnapshot(
       serviceRequestsRef,
       (snapshot) => {
-        const remoteReqs: ServiceRequest[] = snapshot.docs.map((d) => d.data() as ServiceRequest);
-        set({ serviceRequests: remoteReqs });
+        if (snapshot.docs.length > 0) {
+          const remoteReqs: ServiceRequest[] = snapshot.docs.map((d) => d.data() as ServiceRequest);
+          set({ serviceRequests: remoteReqs });
+        }
       },
       (err) => console.error('Firestore serviceRequests sync error:', err)
     );

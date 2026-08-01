@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Product } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
+import { getStockStatus } from '../../utils/stockUtils';
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { useProductStore } from '../../store/useProductStore';
@@ -33,7 +34,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onGoToCart,
   onRequireAuth,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const addToCart = useCartStore((s) => s.addToCart);
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const { reviews, addReview } = useProductStore();
@@ -197,18 +198,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
 
                 <div className="text-right">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                      product.stock > 0
-                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400'
-                        : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400'
-                    }`}
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    {product.stock > 0
-                      ? `${product.stock} In Stock`
-                      : t('outOfStock')}
-                  </span>
+                  {(() => {
+                    const stockInfo = getStockStatus(product.stock, product.lowStockThreshold);
+                    const label = language === 'sw' ? stockInfo.labelSw : stockInfo.labelEn;
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${stockInfo.badgeBg} ${stockInfo.badgeText} ${stockInfo.badgeBorder}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${stockInfo.dotColor} animate-pulse`} />
+                        <span>{label}</span>
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -265,23 +266,30 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   </div>
                 </div>
 
+                {product.stock <= 0 && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+                    <Shield className="w-4 h-4 shrink-0 text-rose-500" />
+                    <span>STOK UMEISHA: Bidhaa hii haipatikani kwa sasa. Tafadhali rejea baadaye au wasiliana nasi.</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={handleAddToCart}
-                    disabled={product.stock === 0}
-                    className="py-3 px-4 rounded-xl border-2 border-amber-500 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                    disabled={product.stock <= 0}
+                    className="py-3 px-4 rounded-xl border-2 border-amber-500 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ShoppingCart className="w-4 h-4" />
-                    <span>{t('addToCart')}</span>
+                    <span>{product.stock <= 0 ? 'Stok Umeisha' : t('addToCart')}</span>
                   </button>
 
                   <button
                     onClick={handleBuyNow}
-                    disabled={product.stock === 0}
-                    className="py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                    disabled={product.stock <= 0}
+                    className="py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Zap className="w-4 h-4" />
-                    <span>{t('buyNow')}</span>
+                    <span>{product.stock <= 0 ? 'Stok Umeisha' : t('buyNow')}</span>
                   </button>
                 </div>
               </div>

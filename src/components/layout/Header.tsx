@@ -161,7 +161,7 @@ export const Header: React.FC<HeaderProps> = ({
                   YMA <span className="text-amber-600 dark:text-amber-500">ENERGY</span>
                 </span>
                 <span className="text-[9px] px-1 py-0.2 rounded font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300/40">
-                  TZ
+                  GROUP
                 </span>
               </div>
               <p className="hidden md:block text-[10px] text-slate-500 dark:text-slate-400 font-medium -mt-0.5">

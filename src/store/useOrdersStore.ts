@@ -3,6 +3,7 @@ import { Order, OrderStatus } from '../types';
 import { initialOrders } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { sendAdminEmailTrigger } from '../services/emailService';
+import { useProductStore } from './useProductStore';
 import {
   collection,
   onSnapshot,
@@ -15,6 +16,7 @@ import {
 interface OrdersState {
   orders: Order[];
   isFirebaseSynced: boolean;
+  isLoading: boolean;
 
   initFirebaseSync: () => void;
 
@@ -26,8 +28,9 @@ interface OrdersState {
 }
 
 export const useOrdersStore = create<OrdersState>((set, get) => ({
-  orders: [],
+  orders: initialOrders,
   isFirebaseSynced: false,
+  isLoading: true,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -37,10 +40,17 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     onSnapshot(
       ordersRef,
       (snapshot) => {
-        const remoteOrders: Order[] = snapshot.docs.map((d) => d.data() as Order);
-        set({ orders: remoteOrders });
+        if (snapshot.docs.length > 0) {
+          const remoteOrders: Order[] = snapshot.docs.map((d) => d.data() as Order);
+          set({ orders: remoteOrders, isLoading: false });
+        } else {
+          set({ orders: initialOrders, isLoading: false });
+        }
       },
-      (err) => console.error('Firestore orders sync error:', err)
+      (err) => {
+        console.error('Firestore orders sync error:', err);
+        set({ isLoading: false });
+      }
     );
   },
 
@@ -66,6 +76,11 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     } catch (err) {
       console.error('Error saving order to Firebase:', err);
     }
+
+    // Deduct stock for ordered items
+    orderData.items.forEach((item) => {
+      useProductStore.getState().adjustStock(item.product.id, -item.quantity);
+    });
 
     // Trigger real-time admin email notification
     sendAdminEmailTrigger({

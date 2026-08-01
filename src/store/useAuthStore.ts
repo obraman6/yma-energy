@@ -52,7 +52,22 @@ export const useAuthStore = create<AuthState>()(
             if (snapshot.empty) {
               set({ users: [] });
             } else {
-              const remoteUsers: User[] = snapshot.docs.map((d) => d.data() as User);
+              const remoteUsersRaw: User[] = snapshot.docs.map((d) => d.data() as User);
+              // Deduplicate users by email or ID
+              const userMap = new Map<string, User>();
+              remoteUsersRaw.forEach((u) => {
+                const emailKey = (u.email || '').trim().toLowerCase();
+                if (emailKey) {
+                  // Keep admin/manager role if duplicates exist
+                  const existing = userMap.get(emailKey);
+                  if (!existing || u.role === 'ADMIN' || u.role === 'MANAGER') {
+                    userMap.set(emailKey, u);
+                  }
+                } else if (u.id) {
+                  userMap.set(u.id, u);
+                }
+              });
+              const remoteUsers = Array.from(userMap.values());
               set({ users: remoteUsers });
 
               // Sync current logged in user details if updated remotely
@@ -243,44 +258,42 @@ export const useAuthStore = create<AuthState>()(
     const cleanEmail = email.trim().toLowerCase();
     const now = new Date().toISOString();
 
+    // Check duplicate email in store
+    const existing = get().users.find((u) => u.email.trim().toLowerCase() === cleanEmail);
+    if (existing) {
+      set({ isLoading: false });
+      return {
+        success: false,
+        message: `Akaunti yenye barua pepe "${cleanEmail}" ipo tayari kama ${existing.role}. Hakuna haja ya kuirudia.`,
+      };
+    }
+
+    const sanitizedId = `user-${cleanEmail.replace(/[^a-z0-9]/g, '-')}`;
+    const newStaff: User = {
+      id: sanitizedId,
+      uid: sanitizedId,
+      name,
+      fullName: name,
+      email: cleanEmail,
+      phone,
+      role,
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    };
+
     try {
-      const res = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-      const newStaff: User = {
-        id: res.user.uid,
-        uid: res.user.uid,
-        name,
-        fullName: name,
-        email: cleanEmail,
-        phone,
-        role,
-        status: 'active',
-        createdAt: now,
-        updatedAt: now,
-      };
-      await setDoc(doc(db, 'users', res.user.uid), newStaff);
-      set({ isLoading: false });
+      await setDoc(doc(db, 'users', sanitizedId), newStaff);
+      const currentUsers = get().users.filter((u) => u.email.trim().toLowerCase() !== cleanEmail);
+      set({ users: [...currentUsers, newStaff], isLoading: false });
       return { success: true, user: newStaff };
-    } catch (err) {
-      const uid = `u-staff-${Date.now()}`;
-      const fallbackStaff: User = {
-        id: uid,
-        uid,
-        name,
-        fullName: name,
-        email: cleanEmail,
-        phone,
-        role,
-        status: 'active',
-        createdAt: now,
-        updatedAt: now,
-      };
-      try {
-        await setDoc(doc(db, 'users', uid), fallbackStaff);
-      } catch (fErr) {
-        console.error('Error saving staff account:', fErr);
-      }
+    } catch (err: any) {
+      console.error('Error saving staff account to Firestore:', err);
       set({ isLoading: false });
-      return { success: true, user: fallbackStaff };
+      return {
+        success: false,
+        message: 'Imefeli kuhifadhi akaunti ya Staff kwenye database.',
+      };
     }
   },
 

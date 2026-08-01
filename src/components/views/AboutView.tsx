@@ -15,7 +15,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ setActiveTab }) => {
       <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 sm:p-12 border border-slate-800 shadow-2xl">
         <div className="relative z-10 max-w-3xl space-y-4">
           <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-amber-500/20 text-amber-400 border border-amber-500/30">
-            About YMA Energy Tanzania
+            About YMA ENERGY GROUP
           </span>
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
             Standardizing Clean Solar Energy Across East Africa

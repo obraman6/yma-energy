@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { CartItem, Product, PaymentMethod } from '../types';
 import { useToastStore } from './useToastStore';
 
@@ -43,11 +44,13 @@ interface CartState {
   autoGenerateRef: () => string;
 }
 
-export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
-  couponCode: '',
-  isCouponApplied: false,
-  couponDiscountPercent: 0,
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      couponCode: '',
+      isCouponApplied: false,
+      couponDiscountPercent: 0,
 
   customerName: '',
   customerPhone: '',
@@ -60,23 +63,45 @@ export const useCartStore = create<CartState>((set, get) => ({
   transactionRef: '',
 
   addToCart: (product, quantity = 1) => {
+    if (product.stock <= 0) {
+      useToastStore.getState().showToast({
+        title: 'Stok Umeisha! (Out of Stock) 🚫',
+        message: `Samahani, bidhaa "${product.name}" haina stok kwa sasa.`,
+        type: 'error',
+      });
+      return;
+    }
+
+    let isExceeded = false;
     set((state) => {
       const existingIndex = state.items.findIndex((item) => item.product.id === product.id);
       if (existingIndex > -1) {
+        const currentQty = state.items[existingIndex].quantity;
+        if (currentQty >= product.stock) {
+          isExceeded = true;
+          return state;
+        }
         const updated = [...state.items];
-        const newQty = Math.min(product.stock, updated[existingIndex].quantity + quantity);
+        const newQty = Math.min(product.stock, currentQty + quantity);
         updated[existingIndex] = { ...updated[existingIndex], quantity: newQty };
         return { items: updated };
       }
       return { items: [...state.items, { product, quantity: Math.min(product.stock, quantity) }] };
     });
 
-    // Show toast notification as requested
-    useToastStore.getState().showToast({
-      title: 'Bidhaa Imeongezwa (Added to Cart) 🛒',
-      message: `"${product.name}" imeongezwa kwenye kikapu chako kwa mafanikio.`,
-      type: 'success',
-    });
+    if (isExceeded) {
+      useToastStore.getState().showToast({
+        title: 'Ukomo wa Stok Umetimia! ⚠️',
+        message: `Huwezi kuongeza zaidi. Stok iliyopo dukani ni vipande ${product.stock} pekee.`,
+        type: 'info',
+      });
+    } else {
+      useToastStore.getState().showToast({
+        title: 'Bidhaa Imeongezwa (Added to Cart) 🛒',
+        message: `"${product.name}" imeongezwa kwenye kikapu chako kwa mafanikio.`,
+        type: 'success',
+      });
+    }
   },
 
   removeFromCart: (productId) => {
@@ -152,4 +177,9 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ transactionRef: newRef });
     return newRef;
   },
-}));
+    }),
+    {
+      name: 'yma_cart_storage',
+    }
+  )
+);

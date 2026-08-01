@@ -13,6 +13,7 @@ import { useServicesStore } from '../../store/useServicesStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 import { SolarService } from '../../types';
+import { ConcentricSpinner } from '../common/ConcentricSpinner';
 
 interface ServicesViewProps {
   onSelectService: (service: SolarService) => void;
@@ -21,7 +22,7 @@ interface ServicesViewProps {
 
 export const ServicesView: React.FC<ServicesViewProps> = ({ onSelectService, openAuthModal }) => {
   const { t, language } = useLanguage();
-  const services = useServicesStore((s) => s.services);
+  const { services, isLoading } = useServicesStore();
   const { user } = useAuthStore();
 
   const handleSelectService = (service: SolarService) => {
@@ -55,7 +56,15 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onSelectService, ope
 
       {/* Services List Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {services.length === 0 ? (
+        {isLoading ? (
+          <div className="col-span-full p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <ConcentricSpinner
+              size="lg"
+              text={language === 'sw' ? 'Inapakia orodha ya huduma za mfumo...' : 'Loading services list...'}
+              subtext={language === 'sw' ? 'Tafadhali subiri kidogo ⏳' : 'Please wait a moment ⏳'}
+            />
+          </div>
+        ) : services.length === 0 ? (
           <div className="col-span-full p-8 text-center text-xs text-slate-500 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
             Hakuna huduma zilizowekwa kwa sasa. (No services available)
           </div>

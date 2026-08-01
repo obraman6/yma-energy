@@ -20,7 +20,7 @@ export const LiveChatModal: React.FC<LiveChatModalProps> = ({ isOpen, onClose })
     {
       id: '1',
       sender: 'bot',
-      text: 'Habari! Welcome to YMA Energy Tanzania 24/7 Live Support. How can our solar specialists assist you today?',
+      text: 'Habari! Welcome to YMA ENERGY GROUP 24/7 Live Support. How can our solar specialists assist you today?',
       time: '09:00',
     },
   ]);

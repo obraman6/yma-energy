@@ -26,10 +26,10 @@ const emailLogs: EmailLog[] = [];
 function getTransporter() {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = (process.env.SMTP_USER || '').trim();
+  const pass = (process.env.SMTP_PASS || '').trim();
 
-  if (user && pass) {
+  if (user && pass && user !== 'MY_SMTP_USER') {
     return nodemailer.createTransport({
       host,
       port,
@@ -78,7 +78,7 @@ app.post('/api/notify-admin-email', async (req, res) => {
       htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e293b; max-width: 600px; border: 1px solid #e2e8f0; rounded: 12px;">
           <div style="background: #0f172a; padding: 16px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
-            <h1 style="color: #f59e0b; margin: 0; font-size: 20px;">YMA ENERGY TANZANIA</h1>
+            <h1 style="color: #f59e0b; margin: 0; font-size: 20px;">YMA ENERGY GROUP</h1>
             <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 12px;">Real-time Sales & Order Notification</p>
           </div>
           
@@ -162,8 +162,8 @@ app.post('/api/notify-admin-email', async (req, res) => {
         });
         status = 'SENT_SMTP';
         console.log(`[EMAIL DISPATCHED via SMTP] Subject: "${subject}" -> ${adminEmail}`);
-      } catch (smtpErr) {
-        console.error('[SMTP EMAIL ERROR, fallback to simulation]:', smtpErr);
+      } catch (smtpErr: any) {
+        console.warn('[SMTP EMAIL NOTICE, fallback to simulation]:', smtpErr.message || smtpErr);
         status = 'SENT_SIMULATED';
       }
     } else {
@@ -215,13 +215,18 @@ app.post('/api/test-email', async (req, res) => {
     let status: 'SENT_SMTP' | 'SENT_SIMULATED' = 'SENT_SIMULATED';
 
     if (transporter) {
-      await transporter.sendMail({
-        from: `"YMA Energy System" <${process.env.SMTP_USER}>`,
-        to: adminEmail,
-        subject,
-        html: htmlContent,
-      });
-      status = 'SENT_SMTP';
+      try {
+        await transporter.sendMail({
+          from: `"YMA Energy System" <${process.env.SMTP_USER}>`,
+          to: adminEmail,
+          subject,
+          html: htmlContent,
+        });
+        status = 'SENT_SMTP';
+      } catch (smtpErr: any) {
+        console.warn('[SMTP TEST EMAIL NOTICE]: Invalid SMTP login or network issue, using simulated dispatch:', smtpErr.message || smtpErr);
+        status = 'SENT_SIMULATED';
+      }
     }
 
     const logEntry: EmailLog = {

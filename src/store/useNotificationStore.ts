@@ -180,7 +180,7 @@ export const useNotificationStore = create<NotificationState>()(
 
           if (perm === 'granted') {
             playChimeSound();
-            new Notification('YMA Energy TZ ☀️', {
+            new Notification('YMA ENERGY GROUP ☀️', {
               body: 'Arifa za Kwenye Simu (Push Notifications) zimewezeshwa kikamilifu!',
               icon: '/favicon.ico',
             });

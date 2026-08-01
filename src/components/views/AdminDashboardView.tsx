@@ -46,6 +46,7 @@ import { useWarrantyStore } from '../../store/useWarrantyStore';
 import { usePaymentGatewayStore, PaymentGateway } from '../../store/usePaymentGatewayStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
+import { getStockStatus } from '../../utils/stockUtils';
 import { Product, OrderStatus, SolarService, UserRole } from '../../types';
 import { ConfirmModal } from '../modals/ConfirmModal';
 import { AdminPaymentGatewayModal } from '../modals/AdminPaymentGatewayModal';
@@ -311,31 +312,55 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     alt={prod.name}
                     className="w-16 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0"
                   />
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 space-y-1">
                     <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-2">
                       {prod.name}
                     </h3>
                     <p className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold">
                       TZS {prod.priceTzs.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-slate-400">Stock: {prod.stock} Units</p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono font-bold">
+                        Stock: {prod.stock} Units
+                      </span>
+                      {(() => {
+                        const stockInfo = getStockStatus(prod.stock, prod.lowStockThreshold);
+                        return (
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${stockInfo.badgeBg} ${stockInfo.badgeText} ${stockInfo.badgeBorder}`}
+                          >
+                            {stockInfo.labelEn}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-mono">
+                      Threshold: ≤ {prod.lowStockThreshold ?? 5} units
+                    </p>
                   </div>
                 </div>
 
                 {/* Stock Quick Modifiers */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <div className="flex gap-1">
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-1 flex-wrap">
+                  <div className="flex gap-1 flex-wrap">
                     <button
                       onClick={() => adjustStock(prod.id, 10)}
-                      className="px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold"
+                      className="px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold hover:bg-emerald-200"
                     >
-                      +10 Stock
+                      +10
                     </button>
                     <button
                       onClick={() => adjustStock(prod.id, -5)}
-                      className="px-2 py-1 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-bold"
+                      className="px-2 py-1 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-bold hover:bg-amber-200"
                     >
-                      -5 Stock
+                      -5
+                    </button>
+                    <button
+                      onClick={() => adjustStock(prod.id, -prod.stock)}
+                      className="px-2 py-1 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 text-[10px] font-bold hover:bg-rose-200"
+                      title="Set Stock to 0 (Triggers Out of Stock Alert)"
+                    >
+                      0 (Out)
                     </button>
                   </div>
 
@@ -759,6 +784,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setIsStaffModalOpen(false);
                       setStaffName('');
                       setStaffEmail('');
+                      setStaffPhone('');
+                    } else {
+                      showToast({
+                        title: 'Haikuweza Kutengeneza ⚠️',
+                        message: res.message || 'Akaunti hii ipo tayari.',
+                        type: 'error',
+                      });
                     }
                   }}
                   className="space-y-3 text-xs"
@@ -961,7 +993,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     {rev.isPinned ? 'Unpin' : 'Pin to Homepage'}
                   </button>
                   <button
-                    onClick={() => replyToReview(rev.id, 'Asante sana kwa ushirikiano na YMA Energy Tanzania!')}
+                    onClick={() => replyToReview(rev.id, 'Asante sana kwa ushirikiano na YMA ENERGY GROUP!')}
                     className="px-3 py-1 rounded-lg bg-amber-500 text-white font-bold"
                   >
                     Add Official Swahili Reply

@@ -31,6 +31,7 @@ export interface Product {
   category: ProductCategory;
   priceTzs: number;
   stock: number;
+  lowStockThreshold?: number;
   specifications: string;
   description: string;
   imageUrl: string;
@@ -122,6 +123,7 @@ export type OrderStatus =
   | 'Payment Confirmed'
   | 'Packed at Branch'
   | 'Out for Delivery'
+  | 'In Transit'
   | 'Delivered'
   | 'Cancelled';
 
@@ -146,42 +148,53 @@ export interface Order {
   customerPhone: string;
   shippingAddress: string;
   region: string;
+  district?: string;
   paymentMethod: PaymentMethod;
-  paymentRef: string;
-  paymentPhone: string;
+  paymentRef?: string;
+  paymentPhone?: string;
+  transactionRef?: string;
   items: CartItem[];
-  subtotalTzs: number;
-  discountTzs: number;
-  totalAmountTzs: number;
+  subtotalTzs?: number;
+  discountTzs?: number;
+  totalAmountTzs?: number;
+  subtotal?: number;
+  deliveryFee?: number;
+  discountAmount?: number;
+  totalAmount?: number;
   status: OrderStatus;
   driverName?: string;
   driverPhone?: string;
   driverVehicle?: string;
+  assignedDriverName?: string;
+  assignedDriverPhone?: string;
+  assignedVehicle?: string;
   deliveryProofUrl?: string;
   createdAt: string;
 }
 
 export interface Warranty {
   id: string;
-  userId: string;
+  userId?: string;
   serialNumber: string;
   productName: string;
+  customerName?: string;
+  customerPhone?: string;
   purchaseDate: string;
   expiryDate: string;
-  warrantyPeriod: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'CLAIM_PENDING' | 'REPLACED';
+  warrantyPeriod?: string;
+  status: 'ACTIVE' | 'EXPIRED' | 'CLAIM_PENDING' | 'REPLACED' | 'Active' | 'Claim Filed' | 'Replaced / Repaired';
 }
 
 export interface WarrantyClaim {
   id: string;
   claimNumber: string;
   warrantyId: string;
-  userId: string;
+  userId?: string;
   productName: string;
   customerName: string;
   customerPhone: string;
   issueDescription: string;
-  status: 'Under Inspection' | 'APPROVED' | 'REJECTED';
+  status: 'Under Inspection' | 'APPROVED' | 'REJECTED' | 'Approved' | 'Rejected';
   adminNotes?: string;
   createdAt: string;
 }
@@ -193,8 +206,11 @@ export interface Branch {
   address: string;
   phone: string;
   email: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
+  isHeadquarters?: boolean;
 }
 
 export interface AppNotification {
@@ -211,8 +227,9 @@ export interface AppNotification {
 export interface ApplianceLoad {
   id: string;
   name: string;
-  nameSw: string;
+  nameSw?: string;
   defaultWatts: number;
-  quantity: number;
-  hoursPerDay: number;
+  quantity?: number;
+  hoursPerDay?: number;
+  category?: string;
 }

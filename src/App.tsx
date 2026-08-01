@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
-import { LanguageProvider } from './context/LanguageContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
 import { Footer } from './components/layout/Footer';
+import { ConcentricSpinner } from './components/common/ConcentricSpinner';
 
 // Views
 import { HomeView } from './components/views/HomeView';
@@ -39,8 +40,17 @@ import { useOrdersStore } from './store/useOrdersStore';
 import { useRepairsStore } from './store/useRepairsStore';
 import { useAuthStore } from './store/useAuthStore';
 
-export default function App() {
+function MainAppContent() {
   const [activeTab, setActiveTab] = useState<string>('home');
+  const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
+  const { language } = useLanguage();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Modal visibility states
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
@@ -77,10 +87,52 @@ export default function App() {
     alert(`QR Code Scanned Successfully! Serial Code: ${code}`);
   };
 
+  if (isAppLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 space-y-6">
+        {/* Logo & Brand Header */}
+        <div className="flex flex-col items-center text-center space-y-3 animate-fade-in">
+          <div className="relative w-24 h-24 flex items-center justify-center">
+            <img
+              src="/logo.svg"
+              alt="YMA Energy Logo"
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+          <div>
+            <h1 className="font-extrabold text-2xl sm:text-3xl tracking-tight text-slate-100 flex items-center justify-center gap-1.5">
+              YMA <span className="text-amber-500">ENERGY</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                GROUP
+              </span>
+            </h1>
+            <p className="text-xs text-amber-400/90 font-medium tracking-wide mt-0.5">
+              Electrical &amp; Solar Power Systems
+            </p>
+          </div>
+        </div>
+
+        {/* Concentric Double Spinner with center logo */}
+        <ConcentricSpinner
+          size="lg"
+          logoSrc="/logo.svg"
+          text={language === 'sw' ? 'Inafunguka Mfumo wa YMA...' : 'Opening YMA System...'}
+          subtext={
+            language === 'sw'
+              ? 'Inapakia kwa haraka na usalama ⚡'
+              : 'Fast & secure system loading ⚡'
+          }
+        />
+      </div>
+    );
+  }
+
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-white transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-white transition-colors duration-300">
           {/* Header */}
           <Header
             activeTab={activeTab}
@@ -281,6 +333,14 @@ export default function App() {
             }}
           />
         </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        <MainAppContent />
       </LanguageProvider>
     </ThemeProvider>
   );

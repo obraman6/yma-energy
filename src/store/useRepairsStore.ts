@@ -33,8 +33,10 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
     onSnapshot(
       repairsRef,
       (snapshot) => {
-        const remoteRepairs: RepairRequest[] = snapshot.docs.map((d) => d.data() as RepairRequest);
-        set({ repairRequests: remoteRepairs });
+        if (snapshot.docs.length > 0) {
+          const remoteRepairs: RepairRequest[] = snapshot.docs.map((d) => d.data() as RepairRequest);
+          set({ repairRequests: remoteRepairs });
+        }
       },
       (err) => console.error('Firestore repairs sync error:', err)
     );

@@ -46,7 +46,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
                   YMA <span className="text-amber-500">ENERGY</span>
                 </span>
                 <span className="text-[9px] px-1 py-0.2 rounded font-bold bg-amber-950/80 text-amber-300 border border-amber-500/30">
-                  TZ
+                  GROUP
                 </span>
               </div>
             </div>
@@ -124,7 +124,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
 
         {/* Bottom Bar Copyright */}
         <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
-          <p>© {new Date().getFullYear()} YMA Energy Tanzania Ltd. All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} YMA ENERGY GROUP. All Rights Reserved.</p>
           <div className="flex items-center gap-3 text-slate-400">
             <button onClick={() => setActiveTab('about')} className="hover:underline">
               {t('navAbout')}

@@ -20,6 +20,7 @@ interface ProductState {
   searchQuery: string;
   sortBy: 'price-asc' | 'price-desc' | 'rating' | 'stock';
   isFirebaseSynced: boolean;
+  isLoading: boolean;
 
   initFirebaseSync: () => void;
 
@@ -40,12 +41,13 @@ interface ProductState {
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
-  products: [],
-  reviews: [],
+  products: initialProducts,
+  reviews: initialReviews,
   selectedCategory: 'All',
   searchQuery: '',
   sortBy: 'rating',
   isFirebaseSynced: false,
+  isLoading: true,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -56,10 +58,17 @@ export const useProductStore = create<ProductState>((set, get) => ({
     onSnapshot(
       productsRef,
       (snapshot) => {
-        const remoteProducts: Product[] = snapshot.docs.map((d) => d.data() as Product);
-        set({ products: remoteProducts });
+        if (snapshot.docs.length > 0) {
+          const remoteProducts: Product[] = snapshot.docs.map((d) => d.data() as Product);
+          set({ products: remoteProducts, isLoading: false });
+        } else {
+          set({ products: initialProducts, isLoading: false });
+        }
       },
-      (err) => console.error('Firestore products sync error:', err)
+      (err) => {
+        console.error('Firestore products sync error:', err);
+        set({ isLoading: false });
+      }
     );
 
     // Sync Reviews from Firestore
@@ -67,8 +76,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
     onSnapshot(
       reviewsRef,
       (snapshot) => {
-        const remoteReviews: CustomerReview[] = snapshot.docs.map((d) => d.data() as CustomerReview);
-        set({ reviews: remoteReviews });
+        if (snapshot.docs.length > 0) {
+          const remoteReviews: CustomerReview[] = snapshot.docs.map((d) => d.data() as CustomerReview);
+          set({ reviews: remoteReviews });
+        }
       },
       (err) => console.error('Firestore reviews sync error:', err)
     );
@@ -80,9 +91,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   addProduct: async (newProdData) => {
     const id = `p-${Date.now()}`;
+    const lowStockThreshold = newProdData.lowStockThreshold ?? 5;
     const newProduct: Product = {
       ...newProdData,
       id,
+      lowStockThreshold,
       rating: 5.0,
     };
 
@@ -101,6 +114,27 @@ export const useProductStore = create<ProductState>((set, get) => ({
         type: 'promo',
         isPush: true,
       });
+
+      // Check stock status for initial low or out of stock alert
+      if (newProduct.stock === 0) {
+        useNotificationStore.getState().addNotification({
+          title: `🚨 Emergency Alert: Out of Stock!`,
+          titleSw: `🚨 Tahadhari ya Dharura: Bidhaa Imeisha!`,
+          message: `"${newProduct.name}" is completely out of stock (Stock = 0). Please restock immediately!`,
+          messageSw: `Bidhaa "${newProduct.name}" imeisha kabisa kwenye duka (Stock = 0). Tafadhali ongeza mzigo dharura!`,
+          type: 'system',
+          isPush: true,
+        });
+      } else if (newProduct.stock > 0 && newProduct.stock <= lowStockThreshold) {
+        useNotificationStore.getState().addNotification({
+          title: `⚠️ Low Stock Alert: ${newProduct.name}`,
+          titleSw: `⚠️ Tahadhari ya Stock: ${newProduct.name}`,
+          message: `Only ${newProduct.stock} unit(s) remaining for "${newProduct.name}" (Threshold <= ${lowStockThreshold}). Please order new stock soon.`,
+          messageSw: `Kiasi cha "${newProduct.name}" kimebaki ${newProduct.stock} tu (Stock Inakaribia Kuisha <= ${lowStockThreshold}). Tafadhali ongeza mzigo mapema.`,
+          type: 'system',
+          isPush: true,
+        });
+      }
     } catch (err) {
       console.error('Error saving product to Firebase:', err);
     }
@@ -109,6 +143,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   editProduct: async (id, updated) => {
+    const existing = get().products.find((p) => p.id === id);
+    const updatedStock = updated.stock !== undefined ? updated.stock : existing?.stock;
+    const threshold = updated.lowStockThreshold ?? existing?.lowStockThreshold ?? 5;
+    const prodName = updated.name || existing?.name || 'Product';
+
     // Optimistic local state update
     set((state) => ({
       products: state.products.map((p) => (p.id === id ? { ...p, ...updated } : p)),
@@ -116,6 +155,28 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
     try {
       await updateDoc(doc(db, 'products', id), updated);
+
+      if (updatedStock !== undefined) {
+        if (updatedStock === 0) {
+          useNotificationStore.getState().addNotification({
+            title: `🚨 Emergency Alert: Out of Stock!`,
+            titleSw: `🚨 Tahadhari ya Dharura: Bidhaa Imeisha!`,
+            message: `"${prodName}" is completely out of stock (Stock = 0). Please restock immediately!`,
+            messageSw: `Bidhaa "${prodName}" imeisha kabisa kwenye duka (Stock = 0). Tafadhali ongeza mzigo dharura!`,
+            type: 'system',
+            isPush: true,
+          });
+        } else if (updatedStock > 0 && updatedStock <= threshold) {
+          useNotificationStore.getState().addNotification({
+            title: `⚠️ Low Stock Alert: ${prodName}`,
+            titleSw: `⚠️ Tahadhari ya Stock: ${prodName}`,
+            message: `Only ${updatedStock} unit(s) remaining for "${prodName}" (Threshold <= ${threshold}). Please order new stock soon.`,
+            messageSw: `Kiasi cha "${prodName}" kimebaki ${updatedStock} tu (Stock Inakaribia Kuisha <= ${threshold}). Tafadhali ongeza mzigo mapema.`,
+            type: 'system',
+            isPush: true,
+          });
+        }
+      }
     } catch (err) {
       console.error('Error updating product in Firebase:', err);
     }
@@ -138,12 +199,34 @@ export const useProductStore = create<ProductState>((set, get) => ({
     if (!product) return;
 
     const newStock = Math.max(0, product.stock + delta);
+    const threshold = product.lowStockThreshold ?? 5;
+
     set((state) => ({
       products: state.products.map((p) => (p.id === id ? { ...p, stock: newStock } : p)),
     }));
 
     try {
       await updateDoc(doc(db, 'products', id), { stock: newStock });
+
+      if (newStock === 0) {
+        useNotificationStore.getState().addNotification({
+          title: `🚨 Emergency Alert: Out of Stock!`,
+          titleSw: `🚨 Tahadhari ya Dharura: Bidhaa Imeisha!`,
+          message: `"${product.name}" is completely out of stock (Stock = 0). Please restock immediately!`,
+          messageSw: `Bidhaa "${product.name}" imeisha kabisa kwenye duka (Stock = 0). Tafadhali ongeza mzigo dharura!`,
+          type: 'system',
+          isPush: true,
+        });
+      } else if (newStock > 0 && newStock <= threshold) {
+        useNotificationStore.getState().addNotification({
+          title: `⚠️ Low Stock Alert: ${product.name}`,
+          titleSw: `⚠️ Tahadhari ya Stock: ${product.name}`,
+          message: `Only ${newStock} unit(s) remaining for "${product.name}" (Threshold <= ${threshold}). Please order new stock soon.`,
+          messageSw: `Kiasi cha "${product.name}" kimebaki ${newStock} tu (Stock Inakaribia Kuisha <= ${threshold}). Tafadhali ongeza mzigo mapema.`,
+          type: 'system',
+          isPush: true,
+        });
+      }
     } catch (err) {
       console.error('Error adjusting stock in Firebase:', err);
     }
