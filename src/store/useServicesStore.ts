@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { SolarService, ServiceRequest, ServiceStatus } from '../types';
 import { initialServices } from '../data/mockData';
 import { db } from '../lib/firebase';
+import { useNotificationStore } from './useNotificationStore';
 import {
   collection,
   onSnapshot,
@@ -24,7 +25,9 @@ interface ServicesState {
   deleteService: (id: string) => Promise<void>;
 
   createServiceRequest: (req: Omit<ServiceRequest, 'id' | 'requestNumber' | 'status' | 'createdAt'>) => Promise<ServiceRequest>;
-  assignEngineer: (requestId: string, engineerName: string) => Promise<void>;
+  assignEngineer: (requestId: string, engineerName: string, engineerPhone?: string, engineerId?: string, engineerEmail?: string) => Promise<void>;
+  respondToServiceAssignment: (requestId: string, action: 'ACCEPTED' | 'REJECTED', techNotes?: string, techPhone?: string) => Promise<void>;
+  updateServiceTechProgress: (requestId: string, status: ServiceStatus, techNotes?: string) => Promise<void>;
   updateRequestStatus: (requestId: string, status: ServiceStatus) => Promise<void>;
   clearAllServicesAndRequests: () => Promise<void>;
 }
@@ -62,10 +65,8 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     onSnapshot(
       serviceRequestsRef,
       (snapshot) => {
-        if (snapshot.docs.length > 0) {
-          const remoteReqs: ServiceRequest[] = snapshot.docs.map((d) => d.data() as ServiceRequest);
-          set({ serviceRequests: remoteReqs });
-        }
+        const remoteReqs: ServiceRequest[] = snapshot.docs.map((d) => d.data() as ServiceRequest);
+        set({ serviceRequests: remoteReqs });
       },
       (err) => console.error('Firestore serviceRequests sync error:', err)
     );
@@ -132,23 +133,125 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       console.error('Error creating service request in Firebase:', err);
     }
 
+    useNotificationStore.getState().addNotification({
+      title: `Ombi Jipya la Huduma: #${newReq.requestNumber}`,
+      titleSw: `Ombi Jipya la Huduma: #${newReq.requestNumber}`,
+      message: `Mteja ${newReq.customerName} amefanya ombi la huduma (${newReq.serviceName}). Simu: ${newReq.phone}.`,
+      messageSw: `Mteja ${newReq.customerName} amefanya ombi la huduma (${newReq.serviceName}). Simu: ${newReq.phone}.`,
+      type: 'maintenance',
+      isPush: true,
+    });
+
     return newReq;
   },
 
-  assignEngineer: async (requestId, engineerName) => {
+  assignEngineer: async (requestId, engineerName, engineerPhone, engineerId, engineerEmail) => {
+    const target = get().serviceRequests.find((r) => r.id === requestId);
+    const assignedPhone = engineerPhone || target?.assignedTechnicianPhone || '0754 000 111';
+
+    const patch = {
+      assignedTechnician: engineerName,
+      assignedTechnicianPhone: assignedPhone,
+      assignedTechnicianId: engineerId || '',
+      assignedTechnicianEmail: engineerEmail || '',
+      techResponseStatus: 'PENDING' as const,
+      status: 'Technician Dispatched' as ServiceStatus,
+    };
+
     set((state) => ({
       serviceRequests: state.serviceRequests.map((r) =>
-        r.id === requestId ? { ...r, assignedTechnician: engineerName, status: 'Technician Dispatched' } : r
+        r.id === requestId ? { ...r, ...patch } : r
       ),
     }));
 
     try {
-      await updateDoc(doc(db, 'serviceRequests', requestId), {
-        assignedTechnician: engineerName,
-        status: 'Technician Dispatched',
-      });
+      await updateDoc(doc(db, 'serviceRequests', requestId), patch);
     } catch (err) {
       console.error('Error assigning engineer in Firebase:', err);
+    }
+
+    if (target) {
+      useNotificationStore.getState().addNotification({
+        title: `Mhandisi Apangiwa: Huduma #${target.requestNumber}`,
+        titleSw: `Mhandisi Apangiwa: Huduma #${target.requestNumber}`,
+        message: `Mhandisi ${engineerName} (Simu: ${assignedPhone}) amepangiwa ombi la huduma #${target.requestNumber}.`,
+        messageSw: `Mhandisi ${engineerName} (Simu: ${assignedPhone}) amepangiwa ombi la huduma #${target.requestNumber}.`,
+        type: 'maintenance',
+        isPush: true,
+      });
+    }
+  },
+
+  respondToServiceAssignment: async (requestId, action, techNotes = '', techPhone = '') => {
+    const target = get().serviceRequests.find((r) => r.id === requestId);
+    const newStatus: ServiceStatus = action === 'ACCEPTED' ? 'Accepted' : 'Rejected';
+    const now = new Date().toLocaleString();
+    const phoneToSave = techPhone || target?.assignedTechnicianPhone || '0754 000 111';
+
+    const patch = {
+      techResponseStatus: action,
+      status: newStatus,
+      techResponseDate: now,
+      assignedTechnicianPhone: phoneToSave,
+      ...(techNotes ? { techNotes } : {}),
+    };
+
+    set((state) => ({
+      serviceRequests: state.serviceRequests.map((r) =>
+        r.id === requestId ? { ...r, ...patch } : r
+      ),
+    }));
+
+    try {
+      await updateDoc(doc(db, 'serviceRequests', requestId), patch);
+    } catch (err) {
+      console.error('Error recording technician response in Firebase:', err);
+    }
+
+    if (target) {
+      const isAcc = action === 'ACCEPTED';
+      useNotificationStore.getState().addNotification({
+        title: isAcc ? `✅ Fundi Amekubali Huduma #${target.requestNumber}` : `❌ Fundi Amekataa Huduma #${target.requestNumber}`,
+        titleSw: isAcc ? `✅ Fundi Amekubali Huduma #${target.requestNumber}` : `❌ Fundi Amekataa Huduma #${target.requestNumber}`,
+        message: isAcc
+          ? `Mhandisi ${target.assignedTechnician} (Simu: ${phoneToSave}) amekubali ombi la ufungaji #${target.requestNumber}.`
+          : `Mhandisi ${target.assignedTechnician} amekataa ombi la ufungaji #${target.requestNumber}.`,
+        messageSw: isAcc
+          ? `Mhandisi ${target.assignedTechnician} (Simu: ${phoneToSave}) amekubali ombi la ufungaji #${target.requestNumber}.`
+          : `Mhandisi ${target.assignedTechnician} amekataa ombi la ufungaji #${target.requestNumber}.`,
+        type: 'maintenance',
+        isPush: true,
+      });
+    }
+  },
+
+  updateServiceTechProgress: async (requestId, status, techNotes) => {
+    const target = get().serviceRequests.find((r) => r.id === requestId);
+    const patch: any = { status };
+    if (techNotes) patch.techNotes = techNotes;
+
+    set((state) => ({
+      serviceRequests: state.serviceRequests.map((r) =>
+        r.id === requestId ? { ...r, ...patch } : r
+      ),
+    }));
+
+    try {
+      await updateDoc(doc(db, 'serviceRequests', requestId), patch);
+    } catch (err) {
+      console.error('Error updating technician service progress in Firebase:', err);
+    }
+
+    if (target) {
+      const techPhone = target.assignedTechnicianPhone || '0754 000 111';
+      useNotificationStore.getState().addNotification({
+        title: `🔄 Maendeleo ya Ufungaji: Huduma #${target.requestNumber}`,
+        titleSw: `🔄 Maendeleo ya Ufungaji: Huduma #${target.requestNumber}`,
+        message: `Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea vyema.'}`,
+        messageSw: `Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea vyema.'}`,
+        type: 'maintenance',
+        isPush: true,
+      });
     }
   },
 

@@ -34,6 +34,9 @@ import {
   MessageSquare,
   Clock,
   MessageCircle,
+  Building2,
+  MapPin,
+  Edit3,
 } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
@@ -45,9 +48,11 @@ import { useRepairsStore } from '../../store/useRepairsStore';
 import { useWarrantyStore } from '../../store/useWarrantyStore';
 import { usePaymentGatewayStore, PaymentGateway } from '../../store/usePaymentGatewayStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useBranchStore } from '../../store/useBranchStore';
+import { useCompanySettingsStore } from '../../store/useCompanySettingsStore';
 import { useToastStore } from '../../store/useToastStore';
 import { getStockStatus } from '../../utils/stockUtils';
-import { Product, OrderStatus, SolarService, UserRole } from '../../types';
+import { Product, OrderStatus, SolarService, UserRole, Branch } from '../../types';
 import { ConfirmModal } from '../modals/ConfirmModal';
 import { AdminPaymentGatewayModal } from '../modals/AdminPaymentGatewayModal';
 import { FirebaseDataInspector } from '../admin/FirebaseDataInspector';
@@ -71,11 +76,180 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 }) => {
   const { t } = useLanguage();
   const showToast = useToastStore((s) => s.showToast);
-  const { users, createStaffUser, updateProfile } = useAuthStore();
+  const { user: currentUser, users, createStaffUser, updateProfile } = useAuthStore();
+
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN' || currentUser?.email === 'admin@ymaenergy.com';
+  const isStaffAdmin = currentUser?.role === 'STAFF_ADMIN';
+  const isManager = currentUser?.role === 'MANAGER';
 
   const [activeAdminTab, setActiveAdminTab] = useState<
-    'inventory' | 'orders' | 'services' | 'gateways' | 'repairs' | 'warranty' | 'reviews' | 'inquiries' | 'emails' | 'users' | 'firebase'
+    'inventory' | 'orders' | 'services' | 'branches' | 'gateways' | 'repairs' | 'warranty' | 'reviews' | 'inquiries' | 'emails' | 'users' | 'firebase'
   >('inventory');
+
+  const { branches, addBranch, updateBranch, deleteBranch, initFirebaseSync: initBranchSync } = useBranchStore();
+  const { settings: companySettings, updateSettings: updateCompanySettings, initFirebaseSync: initSettingsSync } = useCompanySettingsStore();
+
+  useEffect(() => {
+    initBranchSync();
+    initSettingsSync();
+  }, [initBranchSync, initSettingsSync]);
+
+  // Company Contact Settings State
+  const [editingCompanyPhone, setEditingCompanyPhone] = useState('');
+  const [editingCompanyEmail, setEditingCompanyEmail] = useState('');
+  const [editingEmergencyPhone, setEditingEmergencyPhone] = useState('');
+  const [editingWorkingHours, setEditingWorkingHours] = useState('');
+  const [editingHqAddress, setEditingHqAddress] = useState('');
+  const [isSavingCompanySettings, setIsSavingCompanySettings] = useState(false);
+
+  useEffect(() => {
+    if (companySettings) {
+      setEditingCompanyPhone(companySettings.companyPhone || '');
+      setEditingCompanyEmail(companySettings.companyEmail || '');
+      setEditingEmergencyPhone(companySettings.emergencyPhone || '');
+      setEditingWorkingHours(companySettings.workingHours || '');
+      setEditingHqAddress(companySettings.hqAddress || '');
+    }
+  }, [companySettings]);
+
+  const handleSaveCompanySettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingCompanySettings(true);
+    try {
+      await updateCompanySettings({
+        companyPhone: editingCompanyPhone,
+        companyEmail: editingCompanyEmail,
+        emergencyPhone: editingEmergencyPhone,
+        workingHours: editingWorkingHours,
+        hqAddress: editingHqAddress,
+      });
+      showToast({
+        title: 'Taarifa za Mawasiliano Zimehifadhiwa! 📞',
+        message: 'Namba ya simu na barua pepe za msaada zimesasishwa kote kwenye mfumo.',
+        type: 'success',
+      });
+    } catch (err) {
+      console.error(err);
+      showToast({
+        title: 'Kosa!',
+        message: 'Imeshindwa kuhifadhi taarifa. Jaribu tena.',
+        type: 'error',
+      });
+    } finally {
+      setIsSavingCompanySettings(false);
+    }
+  };
+
+  // Branch Delete Confirmation State
+  const [branchToDelete, setBranchToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isDeletingBranch, setIsDeletingBranch] = useState(false);
+
+  const handleConfirmDeleteBranch = async () => {
+    if (!branchToDelete) return;
+    setIsDeletingBranch(true);
+    try {
+      await deleteBranch(branchToDelete.id);
+      showToast({
+        title: 'Tawi Limefutwa 🗑️',
+        message: `Tawi la "${branchToDelete.name}" limeondolewa kwenye mfumo.`,
+        type: 'info',
+      });
+    } catch (err) {
+      console.error('Error deleting branch:', err);
+      showToast({
+        title: 'Kosa',
+        message: 'Imeshindwa kufuta tawi. Tafadhali jaribu tena.',
+        type: 'error',
+      });
+    } finally {
+      setIsDeletingBranch(false);
+      setBranchToDelete(null);
+    }
+  };
+
+  // Branch Management Modal State
+  const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [branchName, setBranchName] = useState('');
+  const [branchCity, setBranchCity] = useState('');
+  const [branchAddress, setBranchAddress] = useState('');
+  const [branchPhone, setBranchPhone] = useState('');
+  const [branchEmail, setBranchEmail] = useState('');
+  const [branchHours, setBranchHours] = useState('Mon - Sat: 08:00 - 18:00');
+  const [branchManager, setBranchManager] = useState('');
+  const [branchLat, setBranchLat] = useState('-6.772');
+  const [branchLng, setBranchLng] = useState('39.231');
+  const [branchIsHq, setBranchIsHq] = useState(false);
+
+  const handleOpenNewBranchModal = () => {
+    setEditingBranch(null);
+    setBranchName('');
+    setBranchCity('');
+    setBranchAddress('');
+    setBranchPhone('+255 ');
+    setBranchEmail('');
+    setBranchHours('Jumatatu - Jumamosi: 08:00 - 18:00');
+    setBranchManager('');
+    setBranchLat('-6.772');
+    setBranchLng('39.231');
+    setBranchIsHq(false);
+    setIsBranchModalOpen(true);
+  };
+
+  const handleOpenEditBranchModal = (b: Branch) => {
+    setEditingBranch(b);
+    setBranchName(b.name || '');
+    setBranchCity(b.city || '');
+    setBranchAddress(b.address || '');
+    setBranchPhone(b.phone || '');
+    setBranchEmail(b.email || '');
+    setBranchHours(b.workingHours || 'Jumatatu - Jumamosi: 08:00 - 18:00');
+    setBranchManager(b.managerName || '');
+    setBranchLat(String(b.lat ?? b.latitude ?? -6.772));
+    setBranchLng(String(b.lng ?? b.longitude ?? 39.231));
+    setBranchIsHq(!!b.isHeadquarters);
+    setIsBranchModalOpen(true);
+  };
+
+  const handleSaveBranch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!branchName.trim() || !branchCity.trim() || !branchPhone.trim()) {
+      showToast({ title: 'Kosa!', message: 'Tafadhali jaza Jina la Tawi, Mji, na Namba ya Simu.', type: 'error' });
+      return;
+    }
+
+    const branchData = {
+      name: branchName,
+      city: branchCity,
+      address: branchAddress,
+      phone: branchPhone,
+      email: branchEmail,
+      workingHours: branchHours,
+      managerName: branchManager,
+      lat: parseFloat(branchLat) || -6.772,
+      lng: parseFloat(branchLng) || 39.231,
+      latitude: parseFloat(branchLat) || -6.772,
+      longitude: parseFloat(branchLng) || 39.231,
+      isHeadquarters: branchIsHq,
+    };
+
+    if (editingBranch) {
+      await updateBranch(editingBranch.id, branchData);
+      showToast({ title: 'Tawi Limesasishwa! 🏢', message: `Taarifa za tawi la ${branchName} zimehifadhiwa.`, type: 'success' });
+    } else {
+      await addBranch(branchData);
+      showToast({ title: 'Tawi Jipya Limeongezwa! 🏢', message: `Tawi la ${branchName} limeongezwa kwa mafanikio.`, type: 'success' });
+    }
+
+    setIsBranchModalOpen(false);
+  };
+
+  const handleDeleteBranch = async (id: string, name: string) => {
+    if (confirm(`Unahakika unataka kufuta tawi la "${name}"?`)) {
+      await deleteBranch(id);
+      showToast({ title: 'Tawi Limefutwa 🗑️', message: `Tawi la ${name} limeondolewa kwenye mfumo.`, type: 'info' });
+    }
+  };
 
   // Live Customer Inquiries from Firestore
   const [inquiriesList, setInquiriesList] = useState<any[]>([]);
@@ -117,8 +291,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [staffName, setStaffName] = useState('');
   const [staffEmail, setStaffEmail] = useState('');
   const [staffPhone, setStaffPhone] = useState('');
-  const [staffRole, setStaffRole] = useState<'MANAGER' | 'ADMIN'>('MANAGER');
-  const [staffPassword, setStaffPassword] = useState('Password123!');
+  const [staffRole, setStaffRole] = useState<UserRole>('MANAGER');
+  const [staffPassword, setStaffPassword] = useState('');
 
   const {
     products: rawProducts,
@@ -193,9 +367,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <Cpu className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-lg font-black">YMA Energy Executive Admin Console</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-black">YMA Energy Control Console</h1>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                isSuperAdmin
+                  ? 'bg-amber-500 text-white'
+                  : isStaffAdmin
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-sky-600 text-white'
+              }`}>
+                {isSuperAdmin ? 'SUPER ADMIN' : isStaffAdmin ? 'STAFF ADMIN' : 'OPERATIONS MANAGER'}
+              </span>
+            </div>
             <p className="text-xs text-amber-400 font-mono">
-              Live System State & Tanzanian Logistics Engine
+              Role: {currentUser?.role || 'ADMIN'} • Logged in as {currentUser?.name || currentUser?.email}
             </p>
           </div>
         </div>
@@ -253,35 +438,38 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {/* Admin Sub-Tabs Header */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200 dark:border-slate-800">
         {[
-          { id: 'inventory', label: 'Catalog & Inventory', icon: Package },
-          { id: 'orders', label: 'Orders & Logistics', icon: ShoppingBag },
-          { id: 'services', label: 'Services & Surveyors', icon: Wrench },
-          { id: 'inquiries', label: `Ujumbe wa Wateja (${inquiriesList.length})`, icon: MessageSquare },
-          { id: 'emails', label: `📧 Email Alerts (${emailAlertsList.length})`, icon: Mail },
-          { id: 'gateways', label: 'Payment Gateways', icon: CreditCard },
-          { id: 'users', label: 'Staff & Roles Control', icon: Users },
-          { id: 'repairs', label: 'Emergency Repairs', icon: ShieldAlert },
-          { id: 'warranty', label: 'Warranty Claims', icon: ShieldCheck },
-          { id: 'reviews', label: 'Customer Reviews', icon: Star },
-          { id: 'firebase', label: '🔥 Firebase Inspector (Live DB)', icon: Database },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeAdminTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveAdminTab(tab.id as any)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-2 transition-all ${
-                isActive
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
-                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+          { id: 'inventory', label: 'Catalog & Inventory', icon: Package, show: true },
+          { id: 'orders', label: 'Orders & Logistics', icon: ShoppingBag, show: true },
+          { id: 'services', label: 'Services & Surveyors', icon: Wrench, show: true },
+          { id: 'branches', label: `🏢 Matawi & Maeneo (${branches.length})`, icon: Building2, show: true },
+          { id: 'inquiries', label: `Ujumbe wa Wateja (${inquiriesList.length})`, icon: MessageSquare, show: true },
+          { id: 'emails', label: `📧 Email Alerts (${emailAlertsList.length})`, icon: Mail, show: true },
+          { id: 'gateways', label: 'Payment Gateways', icon: CreditCard, show: true },
+          { id: 'users', label: 'Staff & Roles Control', icon: Users, show: isSuperAdmin || isStaffAdmin },
+          { id: 'repairs', label: 'Emergency Repairs', icon: ShieldAlert, show: true },
+          { id: 'warranty', label: 'Warranty Claims', icon: ShieldCheck, show: true },
+          { id: 'reviews', label: 'Customer Reviews', icon: Star, show: true },
+          { id: 'firebase', label: '🔥 Firebase Inspector (Live DB)', icon: Database, show: isSuperAdmin },
+        ]
+          .filter((t) => t.show)
+          .map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeAdminTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveAdminTab(tab.id as any)}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-2 transition-all ${
+                  isActive
+                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
       </div>
 
       {/* SUB-TAB 1: CATALOG & INVENTORY */}
@@ -558,23 +746,280 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <span className="text-sky-600">{sr.status}</span>
                   </div>
                   <p>Client: {sr.customerName} ({sr.phone}) - {sr.region}</p>
-                  <div className="pt-2 flex items-center gap-2">
-                    <button
-                      onClick={() => assignEngineer(sr.id, 'Eng. Joseph Kimaro')}
-                      className="px-3 py-1.5 rounded-lg bg-slate-900 text-white font-bold"
-                    >
-                      Assign Eng. Joseph
-                    </button>
-                    <button
-                      onClick={() => updateRequestStatus(sr.id, 'Completed')}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold"
-                    >
-                      Mark Completed
-                    </button>
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <select
+                        onChange={(e) => {
+                          const techId = e.target.value;
+                          if (!techId) return;
+                          const selectedTech = users.find((u) => u.id === techId);
+                          if (selectedTech) {
+                            assignEngineer(sr.id, selectedTech.name, selectedTech.phone, selectedTech.id, selectedTech.email);
+                            showToast({
+                              title: 'Mhandisi Amepangwa! 🛠️',
+                              message: `Huduma imetumwa kwa fundi: ${selectedTech.name}.`,
+                              type: 'success',
+                            });
+                          }
+                        }}
+                        defaultValue=""
+                        className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200"
+                      >
+                        <option value="" disabled>-- Panga Fundi / Dispatch Tech --</option>
+                        {users
+                          .filter((u) => u.role === 'TECHNICIAN')
+                          .map((tech) => (
+                            <option key={tech.id} value={tech.id}>
+                              {tech.name} ({tech.phone || tech.email})
+                            </option>
+                          ))}
+                        {users.filter((u) => u.role === 'TECHNICIAN').length === 0 && (
+                          <option value="fallback" disabled>Hakuna Mafundi (Ongeza kwenye Staff Control)</option>
+                        )}
+                      </select>
+
+                      <button
+                        onClick={() => {
+                          assignEngineer(sr.id, 'Eng. Joseph Kimaro', '+255754000111', 'tech-joseph', 'joseph@ymaenergy.com');
+                          showToast({ title: 'Mhandisi Joseph Amepangwa', message: 'Kazi imekatwa kwenda kwa Joseph.', type: 'success' });
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-xs hover:bg-slate-800"
+                      >
+                        Fast Dispatch: Eng. Joseph
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {sr.assignedTechnician && (
+                        <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20">
+                          Fundi: {sr.assignedTechnician} ({sr.techResponseStatus || 'PENDING'})
+                        </span>
+                      )}
+
+                      <button
+                        onClick={() => updateRequestStatus(sr.id, 'Completed')}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                      >
+                        Kazi Imekamilika
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-TAB: BRANCH LOCATIONS & COMPANY CONTACT MANAGEMENT */}
+      {activeAdminTab === 'branches' && (
+        <div className="space-y-6">
+          {/* Company Support & Emergency Contact Info Settings Card */}
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Phone className="w-5 h-5 text-amber-500" />
+                  <span>Taarifa za Mawasiliano za Kampuni (Company 24/7 Support Details)</span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Super Admin & Staff: Hariri namba za simu, barua pepe ya msaada, na masaa ya kazi. Mabadiliko haya yataonekana kote kwenye app (Footer, Contact View, Invoices).
+                </p>
+              </div>
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                Inaoanishwa na Firestore Live
+              </span>
+            </div>
+
+            <form onSubmit={handleSaveCompanySettings} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Namba ya Simu ya Huduma (Phone Support) *</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingCompanyPhone}
+                    onChange={(e) => setEditingCompanyPhone(e.target.value)}
+                    placeholder="+255 622 359 874"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-sky-500" />
+                    <span>Barua Pepe ya Msaada (Support & Admin Email) *</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={editingCompanyEmail}
+                    onChange={(e) => setEditingCompanyEmail(e.target.value)}
+                    placeholder="support@ymaenergy.co.tz"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                  />
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                    Inatumika kama Target Admin Email kupokea barua pepe za oda na matengenezo.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Hotline ya Dharura (Emergency Hotline)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingEmergencyPhone}
+                    onChange={(e) => setEditingEmergencyPhone(e.target.value)}
+                    placeholder="+255 754 000 111"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2 lg:col-span-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Saa za Huduma / Kazi (Working Hours)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingWorkingHours}
+                    onChange={(e) => setEditingWorkingHours(e.target.value)}
+                    placeholder="24/7 Support | Mon - Sat: 08:00 - 18:00"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Anwani ya Makao Makuu (HQ Address)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingHqAddress}
+                    onChange={(e) => setEditingHqAddress(e.target.value)}
+                    placeholder="Mikocheni B, Sayansi / Kijitonyama, Dar es Salaam"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={isSavingCompanySettings}
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold text-xs flex items-center gap-2 shadow-md transition-all"
+                >
+                  {isSavingCompanySettings ? (
+                    <span>Inahifadhi...</span>
+                  ) : (
+                    <>
+                      <Edit3 className="w-4 h-4" />
+                      <span>Hifadhi Taarifa za Mawasiliano ya Kampuni</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Branch Locations List Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div>
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-amber-500" />
+                <span>Matawi ya YMA ENERGY GROUP (Branch Locations)</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Ongeza au hariri maeneo halisi ya matawi ya kampuni, anwani, namba za simu, barua pepe, na mameneja.
+              </p>
+            </div>
+
+            <button
+              onClick={handleOpenNewBranchModal}
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Ongeza Tawi Jipya (Add Branch)</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {branches.map((b) => (
+              <div
+                key={b.id}
+                className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 shadow-sm hover:border-amber-500/50 transition-all flex flex-col justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 uppercase tracking-wide">
+                        {b.city}
+                      </span>
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 mt-1">
+                        {b.name}
+                      </h3>
+                    </div>
+                    {b.isHeadquarters && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-sm shrink-0">
+                        Makao Makuu (HQ)
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed flex items-start gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    <span>{b.address}</span>
+                  </p>
+
+                  <div className="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs font-mono">
+                    <p className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                      <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <a href={`tel:${b.phone}`} className="hover:underline font-bold">{b.phone}</a>
+                    </p>
+                    <p className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                      <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <a href={`mailto:${b.email}`} className="hover:underline">{b.email}</a>
+                    </p>
+                    {b.workingHours && (
+                      <p className="flex items-center gap-2 text-slate-500 text-[11px]">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{b.workingHours}</span>
+                      </p>
+                    )}
+                    {b.managerName && (
+                      <p className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-[11px] font-sans font-bold pt-1">
+                        <UserIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span>Meneja: {b.managerName}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => handleOpenEditBranchModal(b)}
+                    className="flex-1 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Hariri Taarifa</span>
+                  </button>
+
+                  <button
+                    onClick={() => setBranchToDelete({ id: b.id, name: b.name })}
+                    className="p-1.5 rounded-xl border border-rose-200 dark:border-rose-900 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
+                    title="Futa Tawi"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -801,25 +1246,54 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setStaffRole('MANAGER')}
-                        className={`p-2 rounded-xl font-bold border ${
+                        className={`p-2 rounded-xl font-bold border text-xs ${
                           staffRole === 'MANAGER'
                             ? 'bg-amber-500 text-white border-amber-500'
                             : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        Manager
+                        Manager (Mauzo & Service)
                       </button>
+
                       <button
                         type="button"
-                        onClick={() => setStaffRole('ADMIN')}
-                        className={`p-2 rounded-xl font-bold border ${
-                          staffRole === 'ADMIN'
-                            ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900'
+                        onClick={() => setStaffRole('TECHNICIAN')}
+                        className={`p-2 rounded-xl font-bold border text-xs ${
+                          staffRole === 'TECHNICIAN'
+                            ? 'bg-amber-600 text-white border-amber-600'
                             : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        Administrator
+                        Technician (Fundi Uwandani)
                       </button>
+
+                      {isSuperAdmin && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setStaffRole('STAFF_ADMIN')}
+                            className={`p-2 rounded-xl font-bold border text-xs ${
+                              staffRole === 'STAFF_ADMIN'
+                                ? 'bg-purple-600 text-white border-purple-600'
+                                : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            Staff Admin
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setStaffRole('SUPER_ADMIN')}
+                            className={`p-2 rounded-xl font-bold border text-xs ${
+                              staffRole === 'SUPER_ADMIN' || staffRole === 'ADMIN'
+                                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900'
+                                : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            Super Admin (Full Access)
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -901,19 +1375,63 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
                 <p>Client: {rr.customerName} ({rr.phone})</p>
                 <p className="italic text-slate-500">"{rr.description}"</p>
-                <div className="pt-2 flex items-center gap-2">
-                  <button
-                    onClick={() => dispatchTechnician(rr.id, 'Tech. Sarah Mwanza')}
-                    className="px-3 py-1.5 rounded-lg bg-slate-900 text-white font-bold"
-                  >
-                    Dispatch Tech. Sarah
-                  </button>
-                  <button
-                    onClick={() => updateRepairStatus(rr.id, 'Resolved')}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold"
-                  >
-                    Mark Resolved
-                  </button>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <select
+                      onChange={(e) => {
+                        const techId = e.target.value;
+                        if (!techId) return;
+                        const selectedTech = users.find((u) => u.id === techId);
+                        if (selectedTech) {
+                          dispatchTechnician(rr.id, selectedTech.name, selectedTech.phone, selectedTech.id, selectedTech.email);
+                          showToast({
+                            title: 'Fundi wa Dharura Amepangwa! 🚨',
+                            message: `Tiketi imetumwa kwa fundi: ${selectedTech.name}.`,
+                            type: 'success',
+                          });
+                        }
+                      }}
+                      defaultValue=""
+                      className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200"
+                    >
+                      <option value="" disabled>-- Panga Fundi wa Dharura --</option>
+                      {users
+                        .filter((u) => u.role === 'TECHNICIAN')
+                        .map((tech) => (
+                          <option key={tech.id} value={tech.id}>
+                            {tech.name} ({tech.phone || tech.email})
+                          </option>
+                        ))}
+                      {users.filter((u) => u.role === 'TECHNICIAN').length === 0 && (
+                        <option value="fallback" disabled>Hakuna Mafundi waliopo</option>
+                      )}
+                    </select>
+
+                    <button
+                      onClick={() => {
+                        dispatchTechnician(rr.id, 'Tech. Sarah Mwanza', '+255754999888', 'tech-sarah', 'sarah@ymaenergy.com');
+                        showToast({ title: 'Fundi Sarah Amepangwa', message: 'Tiketi imekatwa kwenda kwa Sarah.', type: 'success' });
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-xs hover:bg-slate-800"
+                    >
+                      Fast Dispatch: Tech. Sarah
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {rr.assignedTechnician && (
+                      <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20">
+                        Fundi: {rr.assignedTechnician} ({rr.techResponseStatus || 'PENDING'})
+                      </span>
+                    )}
+
+                    <button
+                      onClick={() => updateRepairStatus(rr.id, 'Resolved')}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                    >
+                      Mark Resolved
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1158,10 +1676,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 onClick={async () => {
                   setIsSendingTestEmail(true);
                   try {
-                    const res = await fetch('/api/test-email', { method: 'POST' });
+                    const targetEmail = companySettings?.companyEmail || 'support@ymaenergy.co.tz';
+                    const res = await fetch('/api/test-email', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ targetEmail }),
+                    });
                     const data = await res.json();
                     if (data.success) {
-                      showToast({ title: 'Barua Pepe Imetumwa!', message: data.message || 'Test trigger dispatched!', type: 'success' });
+                      showToast({ title: 'Barua Pepe Imetumwa!', message: data.message || `Test alert sent to ${targetEmail}`, type: 'success' });
                     } else {
                       showToast({ title: 'Hitilafu', message: data.error || 'Failed to send test email', type: 'error' });
                     }
@@ -1181,8 +1704,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-800/80 text-xs font-mono">
               <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                <p className="text-[10px] text-slate-400">Target Admin Email</p>
-                <p className="font-bold text-amber-400 truncate">admin@ymaenergy.com</p>
+                <p className="text-[10px] text-slate-400">Target Admin / Customer Support Email</p>
+                <p className="font-bold text-amber-400 truncate">{companySettings?.companyEmail || 'support@ymaenergy.co.tz'}</p>
               </div>
               <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
                 <p className="text-[10px] text-slate-400">Trigger Status</p>
@@ -1281,6 +1804,189 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {/* SUB-TAB 8: FIREBASE DATA INSPECTOR */}
       {activeAdminTab === 'firebase' && <FirebaseDataInspector />}
 
+      {/* Branch Management Modal */}
+      {isBranchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-amber-500" />
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  {editingBranch ? 'Hariri Taarifa za Tawi' : 'Ongeza Tawi Jipya (Add Branch)'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsBranchModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBranch} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Jina la Tawi (Branch Name) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={branchName}
+                    onChange={(e) => setBranchName(e.target.value)}
+                    placeholder="mf. Mbeya Southern Highlands Hub"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Mji / Mkoa (City / Region) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={branchCity}
+                    onChange={(e) => setBranchCity(e.target.value)}
+                    placeholder="mf. Mbeya"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Anwani Halisi ya Tawi (Full Address) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={branchAddress}
+                  onChange={(e) => setBranchAddress(e.target.value)}
+                  placeholder="mf. Plot 44, Uhuru Road, Opposite CRDB Bank"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Namba ya Simu ya Tawi (Phone) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={branchPhone}
+                    onChange={(e) => setBranchPhone(e.target.value)}
+                    placeholder="mf. +255 754 112 233"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Barua Pepe ya Tawi (Branch Email) *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={branchEmail}
+                    onChange={(e) => setBranchEmail(e.target.value)}
+                    placeholder="mf. mbeya@ymaenergy.com"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Saa za Kazi (Working Hours)
+                  </label>
+                  <input
+                    type="text"
+                    value={branchHours}
+                    onChange={(e) => setBranchHours(e.target.value)}
+                    placeholder="mf. Jumatatu - Jumamosi: 08:00 - 18:00"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Meneja wa Tawi (Manager Name)
+                  </label>
+                  <input
+                    type="text"
+                    value={branchManager}
+                    onChange={(e) => setBranchManager(e.target.value)}
+                    placeholder="mf. Eng. Joseph Kimaro"
+                    className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                    GPS Latitude (Lat)
+                  </label>
+                  <input
+                    type="text"
+                    value={branchLat}
+                    onChange={(e) => setBranchLat(e.target.value)}
+                    placeholder="-6.772"
+                    className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                    GPS Longitude (Lng)
+                  </label>
+                  <input
+                    type="text"
+                    value={branchLng}
+                    onChange={(e) => setBranchLng(e.target.value)}
+                    placeholder="39.231"
+                    className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-1 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="branchIsHq"
+                  checked={branchIsHq}
+                  onChange={(e) => setBranchIsHq(e.target.checked)}
+                  className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500"
+                />
+                <label htmlFor="branchIsHq" className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                  Tawi hili ni Makao Makuu (Headquarters)
+                </label>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBranchModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Ghairi
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md"
+                >
+                  {editingBranch ? 'Hifadhi Mabadiliko' : 'Ongeza Tawi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Payment Gateway Modal */}
       <AdminPaymentGatewayModal
         isOpen={isGatewayModalOpen}
@@ -1296,6 +2002,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         title={confirmModal.title}
         message={confirmModal.message}
         type="delete"
+      />
+
+      {/* Branch Delete Confirm Modal */}
+      <ConfirmModal
+        isOpen={!!branchToDelete}
+        onClose={() => setBranchToDelete(null)}
+        onConfirm={handleConfirmDeleteBranch}
+        title="Thibitisha Kufuta Tawi"
+        message={`Je, unahakika unataka kufuta tawi la "${branchToDelete?.name}"? Hatua hii haitaweza kurudishwa.`}
+        confirmText="Ndio, Futa Tawi"
+        cancelText="Ghairi"
+        type="delete"
+        isLoading={isDeletingBranch}
       />
     </div>
   );

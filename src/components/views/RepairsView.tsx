@@ -31,11 +31,14 @@ const equipmentTypes = [
   'Submersible Solar Pump',
 ];
 
+import { RepairRequest } from '../../types';
+
 interface RepairsViewProps {
   openAuthModal?: () => void;
+  onOpenTechnicianStatusModal?: (item: RepairRequest) => void;
 }
 
-export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal }) => {
+export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenTechnicianStatusModal }) => {
   const { t } = useLanguage();
   const { repairRequests, createRepairTicket } = useRepairsStore();
   const { user } = useAuthStore();
@@ -43,9 +46,9 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal }) => {
 
   const [customerName, setCustomerName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [region, setRegion] = useState('Dar es Salaam');
+  const [region, setRegion] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
-  const [selectedEquipment, setSelectedEquipment] = useState('Hybrid Inverter');
+  const [selectedEquipment, setSelectedEquipment] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'Normal' | 'Urgent'>('Urgent');
 
@@ -92,9 +95,17 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal }) => {
       return;
     }
 
-    if (!description.trim()) return;
+    if (!customerName.trim() || !phone.trim() || !region.trim() || !streetAddress.trim() || !selectedEquipment || !description.trim()) {
+      showToast({
+        title: 'Taarifa Hazijakamilika 📍',
+        message: 'Tafadhali jaza Jina, Simu, Mkoa, Mtaa, Chagua Kifaa na Maelezo ya Hitilafu kabla ya kutuma.',
+        type: 'warning',
+      });
+      return;
+    }
 
     const ticket = await createRepairTicket({
+      userId: user.id,
       customerName: customerName || user.name,
       phone: phone || user.phone || '',
       region,
@@ -405,16 +416,50 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal }) => {
                   </div>
                 )}
 
-                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-[10px] sm:text-[11px] font-semibold space-y-0.5">
-                  <p className="text-slate-700 dark:text-slate-300">
-                    Status: <strong className="text-amber-600 dark:text-amber-400">{req.status}</strong>
-                  </p>
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-[11px] font-semibold space-y-1.5 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 dark:text-slate-300">
+                      Hali ya Ombi: <strong className="text-amber-600 dark:text-amber-400">{req.status}</strong>
+                    </span>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                      {req.techResponseStatus === 'ACCEPTED' ? '✅ Dispatched & Confirmed' : '⏳ Pending Technician'}
+                    </span>
+                  </div>
+
                   {req.assignedTechnician && (
-                    <p className="text-slate-500 dark:text-slate-400">
-                      Dispatched Tech: <strong className="text-slate-900 dark:text-slate-100">{req.assignedTechnician}</strong>
-                    </p>
+                    <div className="pt-1.5 border-t border-slate-200 dark:border-slate-700/60 space-y-1">
+                      <p className="text-slate-700 dark:text-slate-200">
+                        Fundi Aliyepangiwa: <strong className="text-slate-900 dark:text-white">{req.assignedTechnician}</strong>
+                      </p>
+                      {req.assignedTechnicianPhone && (
+                        <div className="flex items-center justify-between gap-2 pt-1">
+                          <span className="text-amber-600 dark:text-amber-400 font-mono font-bold flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-amber-500" />
+                            <span>{req.assignedTechnicianPhone}</span>
+                          </span>
+                          <a
+                            href={`tel:${req.assignedTechnicianPhone}`}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] flex items-center gap-1 shadow-sm"
+                          >
+                            <Phone className="w-3 h-3" />
+                            <span>Piga Simu</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
+
+                {onOpenTechnicianStatusModal && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenTechnicianStatusModal(req)}
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                  >
+                    <Wrench className="w-3.5 h-3.5" />
+                    <span>Fuatilia Status ya Fundi (Live Tracker)</span>
+                  </button>
+                )}
               </div>
             ))}
           </div>

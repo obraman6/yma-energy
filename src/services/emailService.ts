@@ -1,20 +1,28 @@
 import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import { useCompanySettingsStore } from '../store/useCompanySettingsStore';
 
 export interface EmailTriggerPayload {
   type: 'order' | 'repair' | 'inquiry';
   data: any;
+  targetEmail?: string;
 }
 
 export async function sendAdminEmailTrigger(payload: EmailTriggerPayload): Promise<boolean> {
   try {
+    const configuredEmail = useCompanySettingsStore.getState().settings?.companyEmail || 'support@ymaenergy.co.tz';
+    const recipientEmail = payload.targetEmail || configuredEmail;
+
     // 1. Call Backend API trigger
     const res = await fetch('/api/notify-admin-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        targetEmail: recipientEmail,
+      }),
     });
 
     const result = await res.json();
@@ -26,7 +34,7 @@ export async function sendAdminEmailTrigger(payload: EmailTriggerPayload): Promi
       id: notificationId,
       type: payload.type,
       subject: result?.log?.subject || `Real-time Alert: ${payload.type.toUpperCase()}`,
-      recipient: result?.log?.recipient || 'admin@ymaenergy.com',
+      recipient: result?.log?.recipient || recipientEmail,
       status: result?.log?.status || 'DISPATCHED',
       createdAt: new Date().toISOString(),
       payload: payload.data,
@@ -39,6 +47,7 @@ export async function sendAdminEmailTrigger(payload: EmailTriggerPayload): Promi
     return result?.success ?? true;
   } catch (error) {
     console.error('Failed to dispatch email trigger API:', error);
+    const configuredEmail = useCompanySettingsStore.getState().settings?.companyEmail || 'support@ymaenergy.co.tz';
     // Fallback log to Firestore directly
     try {
       const notificationId = `eml_fallback_${Date.now()}`;
@@ -46,7 +55,7 @@ export async function sendAdminEmailTrigger(payload: EmailTriggerPayload): Promi
         id: notificationId,
         type: payload.type,
         subject: `[ALERT] New ${payload.type.toUpperCase()} Submitted`,
-        recipient: 'admin@ymaenergy.com',
+        recipient: payload.targetEmail || configuredEmail,
         status: 'DISPATCHED_FALLBACK',
         createdAt: new Date().toISOString(),
         payload: payload.data,

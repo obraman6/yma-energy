@@ -36,27 +36,31 @@ import { useWarrantyStore } from '../../store/useWarrantyStore';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { useProductStore } from '../../store/useProductStore';
 import { useToastStore } from '../../store/useToastStore';
-import { Order, Warranty } from '../../types';
+import { Order, Warranty, ServiceRequest, RepairRequest } from '../../types';
 import { ConfirmModal } from '../modals/ConfirmModal';
 
 interface AccountViewProps {
   onOpenAdminConsole: () => void;
+  onOpenTechnicianPortal?: () => void;
   onOpenInvoiceModal: (order: Order) => void;
   onOpenDeliveryModal: (order: Order) => void;
   onOpenClaimModal: (warranty: Warranty) => void;
   onOpenQrScanner: () => void;
   onOpenLiveChat: () => void;
   onOpenWishlistModal?: () => void;
+  onOpenTechnicianStatusModal?: (item: ServiceRequest | RepairRequest) => void;
 }
 
 export const AccountView: React.FC<AccountViewProps> = ({
   onOpenAdminConsole,
+  onOpenTechnicianPortal,
   onOpenInvoiceModal,
   onOpenDeliveryModal,
   onOpenClaimModal,
   onOpenQrScanner,
   onOpenLiveChat,
   onOpenWishlistModal,
+  onOpenTechnicianStatusModal,
 }) => {
   const { t, language, toggleLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -476,13 +480,19 @@ export const AccountView: React.FC<AccountViewProps> = ({
                 {user.name}
               </h1>
               <span
-                className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  user.role === 'ADMIN'
+                className={`text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                  user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
                     ? 'bg-slate-900 dark:bg-slate-100 text-amber-400 dark:text-slate-900'
+                    : user.role === 'STAFF_ADMIN'
+                    ? 'bg-purple-600 text-white'
+                    : user.role === 'MANAGER'
+                    ? 'bg-sky-600 text-white'
+                    : user.role === 'TECHNICIAN'
+                    ? 'bg-amber-500 text-white'
                     : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
                 }`}
               >
-                {user.role === 'ADMIN' ? '🔑 ADMIN MANAGER' : 'CUSTOMER'}
+                {user.role}
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
@@ -491,14 +501,24 @@ export const AccountView: React.FC<AccountViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          {user.role === 'ADMIN' && (
+          {user.role === 'TECHNICIAN' && onOpenTechnicianPortal && (
+            <button
+              onClick={onOpenTechnicianPortal}
+              className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20"
+            >
+              <Wrench className="w-3.5 h-3.5" />
+              <span>Technician Portal (Kazi Zako)</span>
+            </button>
+          )}
+
+          {(user.role === 'SUPER_ADMIN' || user.role === 'STAFF_ADMIN' || user.role === 'ADMIN' || user.role === 'MANAGER') && (
             <button
               onClick={onOpenAdminConsole}
               className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-100 dark:to-white text-white dark:text-slate-900 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm"
               id="open-admin-console-btn"
             >
               <Cpu className="w-3.5 h-3.5 text-amber-400 dark:text-amber-600" />
-              <span>Manager Console</span>
+              <span>Console / Administration</span>
             </button>
           )}
 
@@ -713,34 +733,146 @@ export const AccountView: React.FC<AccountViewProps> = ({
           </button>
 
           {expandedIndex === 3 && (
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 space-y-3 text-xs">
-              <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase text-[10px]">
-                Service Installation Requests
-              </h4>
-              {myServiceRequests.length === 0 ? (
-                <p className="text-slate-500 italic">No service requests yet.</p>
-              ) : (
-                myServiceRequests.map((sr) => (
-                  <div key={sr.id} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                    <p className="font-bold text-slate-900 dark:text-slate-100">#{sr.requestNumber} - {sr.serviceName}</p>
-                    <p className="text-slate-500">Status: <strong className="text-amber-600">{sr.status}</strong></p>
-                  </div>
-                ))
-              )}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 space-y-4 text-xs">
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+                  <Wrench className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Maombi ya Huduma ya Solar (Service Installation Requests)</span>
+                </h4>
+                {myServiceRequests.length === 0 ? (
+                  <p className="text-slate-500 italic">Bado hujatuma ombi lolote la huduma.</p>
+                ) : (
+                  myServiceRequests.map((sr) => (
+                    <div
+                      key={sr.id}
+                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-black font-mono text-amber-600 dark:text-amber-400">
+                          #{sr.requestNumber}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                          {sr.status}
+                        </span>
+                      </div>
 
-              <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase text-[10px] pt-2">
-                Emergency Repair Tickets
-              </h4>
-              {myRepairRequests.length === 0 ? (
-                <p className="text-slate-500 italic">No repair tickets yet.</p>
-              ) : (
-                myRepairRequests.map((rr) => (
-                  <div key={rr.id} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                    <p className="font-bold text-slate-900 dark:text-slate-100">#{rr.requestNumber} - {rr.equipmentType}</p>
-                    <p className="text-slate-500">Status: <strong className="text-rose-600">{rr.status}</strong></p>
-                  </div>
-                ))
-              )}
+                      <p className="font-extrabold text-slate-900 dark:text-slate-100">
+                        {sr.serviceName}
+                      </p>
+
+                      {sr.assignedTechnician ? (
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5 text-[11px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600 dark:text-slate-300 font-semibold">
+                              Fundi Aliyepangiwa: <strong className="text-slate-900 dark:text-white">{sr.assignedTechnician}</strong>
+                            </span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                              {sr.techResponseStatus === 'ACCEPTED' ? '✅ Dispatched' : '⏳ Pending'}
+                            </span>
+                          </div>
+                          {sr.assignedTechnicianPhone && (
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                              <span className="text-amber-600 dark:text-amber-400 font-mono font-bold flex items-center gap-1">
+                                <Phone className="w-3 h-3 text-amber-500" />
+                                <span>{sr.assignedTechnicianPhone}</span>
+                              </span>
+                              <a
+                                href={`tel:${sr.assignedTechnicianPhone}`}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-extrabold text-[10px] flex items-center gap-1"
+                              >
+                                <Phone className="w-3 h-3" />
+                                <span>Piga Simu</span>
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 italic">Inasubiri upangaji wa fundi kutoka makao makuu...</p>
+                      )}
+
+                      {onOpenTechnicianStatusModal && (
+                        <button
+                          onClick={() => onOpenTechnicianStatusModal(sr)}
+                          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-amber-500/20 transition-all"
+                        >
+                          <Wrench className="w-3.5 h-3.5" />
+                          <span>Tazama Status ya Fundi (Live Technician Tracker)</span>
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Tiketi za Matengenezo (Emergency Repair Tickets)</span>
+                </h4>
+                {myRepairRequests.length === 0 ? (
+                  <p className="text-slate-500 italic">Bado hujafungua tiketi ya matengenezo.</p>
+                ) : (
+                  myRepairRequests.map((rr) => (
+                    <div
+                      key={rr.id}
+                      className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-black font-mono text-amber-600 dark:text-amber-400">
+                          #{rr.requestNumber}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                          {rr.status}
+                        </span>
+                      </div>
+
+                      <p className="font-extrabold text-slate-900 dark:text-slate-100">
+                        {rr.equipmentType}
+                      </p>
+
+                      {rr.assignedTechnician ? (
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1.5 text-[11px]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600 dark:text-slate-300 font-semibold">
+                              Fundi Aliyepangiwa: <strong className="text-slate-900 dark:text-white">{rr.assignedTechnician}</strong>
+                            </span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                              {rr.techResponseStatus === 'ACCEPTED' ? '✅ Dispatched' : '⏳ Pending'}
+                            </span>
+                          </div>
+                          {rr.assignedTechnicianPhone && (
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                              <span className="text-amber-600 dark:text-amber-400 font-mono font-bold flex items-center gap-1">
+                                <Phone className="w-3 h-3 text-amber-500" />
+                                <span>{rr.assignedTechnicianPhone}</span>
+                              </span>
+                              <a
+                                href={`tel:${rr.assignedTechnicianPhone}`}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-extrabold text-[10px] flex items-center gap-1"
+                              >
+                                <Phone className="w-3 h-3" />
+                                <span>Piga Simu</span>
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 italic">Inasubiri upangaji wa fundi wa dharura...</p>
+                      )}
+
+                      {onOpenTechnicianStatusModal && (
+                        <button
+                          onClick={() => onOpenTechnicianStatusModal(rr)}
+                          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all"
+                        >
+                          <Wrench className="w-3.5 h-3.5" />
+                          <span>Tazama Status ya Fundi (Live Technician Tracker)</span>
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           )}
         </div>

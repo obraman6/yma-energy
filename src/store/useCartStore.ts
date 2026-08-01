@@ -55,7 +55,7 @@ export const useCartStore = create<CartState>()(
   customerName: '',
   customerPhone: '',
   shippingAddress: '',
-  selectedRegion: 'Dar es Salaam',
+  selectedRegion: '',
   selectedDistrict: '',
 
   paymentMethod: 'M-Pesa',

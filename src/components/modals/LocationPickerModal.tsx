@@ -46,9 +46,10 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   const setShippingInfo = useCartStore((s) => s.setShippingInfo);
 
   const [searchRegion, setSearchRegion] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('Dar es Salaam');
-  const [district, setDistrict] = useState('Kinondoni');
-  const [landmark, setLandmark] = useState('Plot 12, Mikocheni B, Near Shoppers Plaza');
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [district, setDistrict] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   if (!isOpen) return null;
 
@@ -57,15 +58,29 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   );
 
   const handleConfirm = () => {
-    const fullAddress = `${landmark}, ${district}, ${selectedRegion}`;
+    if (!selectedRegion) {
+      setValidationError('Tafadhali chagua Mkoa (Select Region).');
+      return;
+    }
+    if (!district.trim()) {
+      setValidationError('Tafadhali jaza Wilaya / District.');
+      return;
+    }
+    if (!landmark.trim()) {
+      setValidationError('Tafadhali jaza Mtaa / Barabara / Landmark.');
+      return;
+    }
+
+    setValidationError('');
+    const fullAddress = `${landmark.trim()}, ${district.trim()}, ${selectedRegion}`;
     setShippingInfo({
       selectedRegion,
-      selectedDistrict: district,
+      selectedDistrict: district.trim(),
       shippingAddress: fullAddress,
     });
 
     if (onSelectAddress) {
-      onSelectAddress(selectedRegion, district, fullAddress);
+      onSelectAddress(selectedRegion, district.trim(), fullAddress);
     }
     onClose();
   };
@@ -180,6 +195,12 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
               />
             </div>
           </div>
+
+          {validationError && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold">
+              ⚠️ {validationError}
+            </div>
+          )}
 
           {/* Action Button */}
           <button

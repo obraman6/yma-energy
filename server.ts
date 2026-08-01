@@ -58,8 +58,8 @@ app.get('/api/email-logs', (req, res) => {
 // API: Send Real-Time Email Notification to Admin
 app.post('/api/notify-admin-email', async (req, res) => {
   try {
-    const { type, data } = req.body;
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@ymaenergy.com';
+    const { type, data, targetEmail } = req.body;
+    const adminEmail = targetEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'support@ymaenergy.co.tz';
 
     let subject = '';
     let htmlContent = '';
@@ -200,7 +200,8 @@ app.post('/api/notify-admin-email', async (req, res) => {
 // API: Send Test Email
 app.post('/api/test-email', async (req, res) => {
   try {
-    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@ymaenergy.com';
+    const { targetEmail } = req.body || {};
+    const adminEmail = targetEmail || process.env.ADMIN_NOTIFICATION_EMAIL || 'support@ymaenergy.co.tz';
     const transporter = getTransporter();
     const subject = '🔔 [TEST ALERT] YMA Energy Email Trigger Verification';
     const htmlContent = `

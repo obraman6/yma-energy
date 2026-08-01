@@ -2,6 +2,7 @@ import React from 'react';
 import { X, CheckCircle, Printer, Download, ShieldCheck, Sun } from 'lucide-react';
 import { Order } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCompanySettingsStore } from '../../store/useCompanySettingsStore';
 
 interface ElectronicInvoiceModalProps {
   order: Order | null;
@@ -15,6 +16,7 @@ export const ElectronicInvoiceModal: React.FC<ElectronicInvoiceModalProps> = ({
   onClose,
 }) => {
   const { t } = useLanguage();
+  const settings = useCompanySettingsStore((s) => s.settings);
 
   if (!isOpen || !order || typeof order !== 'object' || !('id' in order)) return null;
 
@@ -66,7 +68,7 @@ export const ElectronicInvoiceModal: React.FC<ElectronicInvoiceModalProps> = ({
               <p className="font-bold text-slate-900 dark:text-slate-100">YMA ENERGY GROUP</p>
               <p className="text-slate-500 dark:text-slate-400">TIN: 142-998-102</p>
               <p className="text-slate-500 dark:text-slate-400">Plot 44, Mikocheni B, Dar es Salaam</p>
-              <p className="text-slate-500 dark:text-slate-400">Helpline: +255 622 359 874</p>
+              <p className="text-slate-500 dark:text-slate-400">Helpline: {settings.companyPhone}</p>
             </div>
 
             {/* Customer */}

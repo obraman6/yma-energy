@@ -1,4 +1,12 @@
 import { create } from 'zustand';
+import { db } from '../lib/firebase';
+import {
+  collection,
+  onSnapshot,
+  doc,
+  setDoc,
+  deleteDoc,
+} from 'firebase/firestore';
 
 export interface PaymentGateway {
   id: string;
@@ -15,10 +23,14 @@ export interface PaymentGateway {
 
 interface PaymentGatewayState {
   gateways: PaymentGateway[];
-  addGateway: (gateway: Omit<PaymentGateway, 'id'>) => PaymentGateway;
-  updateGateway: (id: string, updated: Partial<PaymentGateway>) => void;
-  toggleGatewayStatus: (id: string) => void;
-  deleteGateway: (id: string) => void;
+  isFirebaseSynced: boolean;
+  isLoading: boolean;
+
+  initFirebaseSync: () => void;
+  addGateway: (gateway: Omit<PaymentGateway, 'id'>) => Promise<PaymentGateway>;
+  updateGateway: (id: string, updated: Partial<PaymentGateway>) => Promise<void>;
+  toggleGatewayStatus: (id: string) => Promise<void>;
+  deleteGateway: (id: string) => Promise<void>;
 }
 
 const initialGateways: PaymentGateway[] = [
@@ -92,35 +104,117 @@ const initialGateways: PaymentGateway[] = [
   },
 ];
 
-export const usePaymentGatewayStore = create<PaymentGatewayState>((set) => ({
+export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => ({
   gateways: initialGateways,
+  isFirebaseSynced: false,
+  isLoading: true,
 
-  addGateway: (gatewayData) => {
+  initFirebaseSync: () => {
+    if (get().isFirebaseSynced) return;
+    set({ isFirebaseSynced: true });
+
+    const ref = collection(db, 'paymentGateways');
+    onSnapshot(
+      ref,
+      (snapshot) => {
+        if (snapshot.docs.length > 0) {
+          const remoteGateways: PaymentGateway[] = snapshot.docs.map((d) => {
+            const data = d.data();
+            return {
+              ...data,
+              id: data.id || d.id,
+            } as PaymentGateway;
+          });
+          set({ gateways: remoteGateways, isLoading: false });
+        } else {
+          // Seed initial gateways to Firestore
+          initialGateways.forEach((gw) => {
+            const cleanDoc = JSON.parse(JSON.stringify(gw));
+            setDoc(doc(db, 'paymentGateways', gw.id), cleanDoc, { merge: true }).catch((e) =>
+              console.error('Seeding payment gateway error:', e)
+            );
+          });
+          set({ gateways: initialGateways, isLoading: false });
+        }
+      },
+      (err) => {
+        console.error('Firestore paymentGateways sync error:', err);
+        set({ isLoading: false });
+      }
+    );
+  },
+
+  addGateway: async (gatewayData) => {
+    const newId = `gw-${Date.now()}`;
     const newGateway: PaymentGateway = {
       ...gatewayData,
-      id: `gw-${Date.now()}`,
+      id: newId,
+      isActive: gatewayData.isActive ?? true,
     };
+    const cleanDoc = JSON.parse(JSON.stringify(newGateway));
+
     set((state) => ({ gateways: [...state.gateways, newGateway] }));
+
+    try {
+      await setDoc(doc(db, 'paymentGateways', newId), cleanDoc, { merge: true });
+    } catch (err) {
+      console.error('Error adding payment gateway to Firebase:', err);
+    }
+
     return newGateway;
   },
 
-  updateGateway: (id, updated) => {
+  updateGateway: async (id, updated) => {
+    const currentGw = get().gateways.find((g) => g.id === id);
+    const merged: PaymentGateway = {
+      ...(currentGw || ({ id } as PaymentGateway)),
+      ...updated,
+      id,
+    };
+    const cleanDoc = JSON.parse(JSON.stringify(merged));
+
     set((state) => ({
-      gateways: state.gateways.map((g) => (g.id === id ? { ...g, ...updated } : g)),
+      gateways: state.gateways.map((g) => (g.id === id ? merged : g)),
     }));
+
+    try {
+      await setDoc(doc(db, 'paymentGateways', id), cleanDoc, { merge: true });
+    } catch (err) {
+      console.error('Error updating payment gateway in Firebase:', err);
+    }
   },
 
-  toggleGatewayStatus: (id) => {
+  toggleGatewayStatus: async (id) => {
+    const currentGw = get().gateways.find((g) => g.id === id);
+    if (!currentGw) return;
+
+    const newActive = !currentGw.isActive;
+    const merged: PaymentGateway = {
+      ...currentGw,
+      isActive: newActive,
+    };
+    const cleanDoc = JSON.parse(JSON.stringify(merged));
+
     set((state) => ({
-      gateways: state.gateways.map((g) =>
-        g.id === id ? { ...g, isActive: !g.isActive } : g
-      ),
+      gateways: state.gateways.map((g) => (g.id === id ? merged : g)),
     }));
+
+    try {
+      await setDoc(doc(db, 'paymentGateways', id), cleanDoc, { merge: true });
+    } catch (err) {
+      console.error('Error toggling payment gateway in Firebase:', err);
+    }
   },
 
-  deleteGateway: (id) => {
+  deleteGateway: async (id) => {
     set((state) => ({
       gateways: state.gateways.filter((g) => g.id !== id),
     }));
+
+    try {
+      await deleteDoc(doc(db, 'paymentGateways', id));
+    } catch (err) {
+      console.error('Error deleting payment gateway from Firebase:', err);
+    }
   },
 }));

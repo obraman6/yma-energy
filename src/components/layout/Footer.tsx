@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Sun,
   Phone,
@@ -11,6 +11,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useBranchStore } from '../../store/useBranchStore';
+import { useCompanySettingsStore } from '../../store/useCompanySettingsStore';
 
 interface FooterProps {
   setActiveTab: (tab: string) => void;
@@ -18,6 +20,13 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
   const { t } = useLanguage();
+  const { branches, initFirebaseSync: initBranchSync } = useBranchStore();
+  const { settings, initFirebaseSync: initSettingsSync } = useCompanySettingsStore();
+
+  useEffect(() => {
+    initBranchSync();
+    initSettingsSync();
+  }, [initBranchSync, initSettingsSync]);
 
   return (
     <footer className="w-full bg-slate-900 text-slate-300 border-t border-slate-800 pt-6 pb-16 lg:pb-8 mt-8 transition-colors">
@@ -54,31 +63,27 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
 
           {/* Column 3: Branch Network */}
           <div className="space-y-2">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-800 pb-1">
-              {t('branchLocations')}
-            </h3>
-            <div className="space-y-1.5 text-[11px]">
-              <div className="flex gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-slate-200">Dar es Salaam Main Hub</p>
-                  <p className="text-[10px] text-slate-400">Mikocheni B, Sayansi / Kijitonyama</p>
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                {t('branchLocations')}
+              </h3>
+              <button
+                onClick={() => setActiveTab('contact')}
+                className="text-[10px] text-amber-400 hover:underline font-bold"
+              >
+                Tazama Zote ({branches.length})
+              </button>
+            </div>
+            <div className="space-y-2 text-[11px]">
+              {branches.slice(0, 3).map((branch) => (
+                <div key={branch.id} className="flex gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-slate-200">{branch.name}</p>
+                    <p className="text-[10px] text-slate-400">{branch.address} • {branch.phone}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-slate-200">Arusha Northern Zone</p>
-                  <p className="text-[10px] text-slate-400">Njiro Complex, Block C</p>
-                </div>
-              </div>
-              <div className="flex gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-slate-200">Mwanza Lake Zone Hub</p>
-                  <p className="text-[10px] text-slate-400">Capri Point Road, Tilapia Area</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -89,7 +94,7 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
             </h3>
             <div className="space-y-1.5 text-[11px]">
               <a
-                href="tel:+255622359874"
+                href={`tel:${settings.companyPhone.replace(/\s+/g, '')}`}
                 className="p-2 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2 hover:border-amber-500 transition-all block"
               >
                 <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
@@ -97,12 +102,12 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
                 </div>
                 <div>
                   <p className="text-[9px] text-slate-400 font-bold uppercase">{t('phoneLabel')}</p>
-                  <p className="font-mono font-bold text-white text-xs">+255 622 359 874</p>
+                  <p className="font-mono font-bold text-white text-xs">{settings.companyPhone}</p>
                 </div>
               </a>
 
               <a
-                href="mailto:support@ymaenergy.co.tz"
+                href={`mailto:${settings.companyEmail}`}
                 className="p-2 rounded-xl bg-slate-800 border border-slate-700 flex items-center gap-2 hover:border-amber-500 transition-all block"
               >
                 <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-400 shrink-0">
@@ -110,7 +115,9 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
                 </div>
                 <div>
                   <p className="text-[9px] text-slate-400 font-bold uppercase">{t('emailLabel')}</p>
-                  <p className="font-mono font-bold text-white text-[11px]">support@ymaenergy.co.tz</p>
+                  <p className="font-mono font-bold text-white text-[11px] truncate max-w-[170px]">
+                    {settings.companyEmail}
+                  </p>
                 </div>
               </a>
 

@@ -14,6 +14,7 @@ import { RepairsView } from './components/views/RepairsView';
 import { CartView } from './components/views/CartView';
 import { AccountView } from './components/views/AccountView';
 import { AdminDashboardView } from './components/views/AdminDashboardView';
+import { TechnicianDashboardView } from './components/views/TechnicianDashboardView';
 import { AccessDeniedView } from './components/views/AccessDeniedView';
 import { AboutView } from './components/views/AboutView';
 import { ContactView } from './components/views/ContactView';
@@ -27,6 +28,7 @@ import { LiveDeliveryModal } from './components/modals/LiveDeliveryModal';
 import { WarrantyClaimModal } from './components/modals/WarrantyClaimModal';
 import { QrScannerModal } from './components/modals/QrScannerModal';
 import { LiveChatModal } from './components/modals/LiveChatModal';
+import { LiveTechnicianModal } from './components/modals/LiveTechnicianModal';
 import { BranchMapModal } from './components/modals/BranchMapModal';
 import { ReportExportModal } from './components/modals/ReportExportModal';
 import { AdminProductModal } from './components/modals/AdminProductModal';
@@ -35,7 +37,7 @@ import { WishlistModal } from './components/modals/WishlistModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { ToastContainer } from './components/layout/ToastContainer';
 
-import { Product, SolarService, Order, Branch, Warranty } from './types';
+import { Product, SolarService, Order, Branch, Warranty, ServiceRequest, RepairRequest } from './types';
 import { useOrdersStore } from './store/useOrdersStore';
 import { useRepairsStore } from './store/useRepairsStore';
 import { useAuthStore } from './store/useAuthStore';
@@ -55,6 +57,7 @@ function MainAppContent() {
   // Modal visibility states
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [selectedServiceForModal, setSelectedServiceForModal] = useState<SolarService | null>(null);
+  const [selectedTechnicianItem, setSelectedTechnicianItem] = useState<ServiceRequest | RepairRequest | null>(null);
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<Order | null>(null);
   const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState<Order | null>(null);
@@ -170,7 +173,12 @@ function MainAppContent() {
               />
             )}
 
-            {activeTab === 'repairs' && <RepairsView openAuthModal={() => setIsAuthOpen(true)} />}
+            {activeTab === 'repairs' && (
+              <RepairsView
+                openAuthModal={() => setIsAuthOpen(true)}
+                onOpenTechnicianStatusModal={(item) => setSelectedTechnicianItem(item)}
+              />
+            )}
 
             {activeTab === 'about' && <AboutView setActiveTab={setActiveTab} />}
 
@@ -192,17 +200,33 @@ function MainAppContent() {
             {activeTab === 'account' && (
               <AccountView
                 onOpenAdminConsole={() => setActiveTab('admin')}
+                onOpenTechnicianPortal={() => setActiveTab('technician')}
                 onOpenInvoiceModal={(ord) => setSelectedOrderForInvoice(ord)}
                 onOpenDeliveryModal={(ord) => setSelectedOrderForDelivery(ord)}
                 onOpenClaimModal={(warr) => setSelectedWarrantyForClaim(warr)}
                 onOpenQrScanner={() => setIsQrScannerOpen(true)}
                 onOpenLiveChat={() => setIsLiveChatOpen(true)}
                 onOpenWishlistModal={() => setIsWishlistOpen(true)}
+                onOpenTechnicianStatusModal={(item) => setSelectedTechnicianItem(item)}
               />
             )}
 
+            {activeTab === 'technician' &&
+              (!user || user.role !== 'TECHNICIAN' ? (
+                <AccessDeniedView
+                  onGoHome={() => setActiveTab('home')}
+                  onOpenAuth={() => setIsAuthOpen(true)}
+                />
+              ) : (
+                <TechnicianDashboardView onBackToAccount={() => setActiveTab('account')} />
+              ))}
+
             {activeTab === 'admin' &&
-              (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER') ? (
+              (!user ||
+              (user.role !== 'SUPER_ADMIN' &&
+                user.role !== 'STAFF_ADMIN' &&
+                user.role !== 'ADMIN' &&
+                user.role !== 'MANAGER') ? (
                 <AccessDeniedView
                   onGoHome={() => setActiveTab('home')}
                   onOpenAuth={() => setIsAuthOpen(true)}
@@ -252,6 +276,14 @@ function MainAppContent() {
             onClose={() => setSelectedServiceForModal(null)}
             onOpenLocationPicker={() => setIsLocationPickerOpen(true)}
             onRequireAuth={() => setIsAuthOpen(true)}
+            onOpenTechnicianStatusModal={(item) => setSelectedTechnicianItem(item)}
+          />
+
+          <LiveTechnicianModal
+            item={selectedTechnicianItem}
+            isOpen={!!selectedTechnicianItem}
+            onClose={() => setSelectedTechnicianItem(null)}
+            onOpenLiveChat={() => setIsLiveChatOpen(true)}
           />
 
           <LocationPickerModal
@@ -327,8 +359,17 @@ function MainAppContent() {
             isOpen={isAuthOpen}
             onClose={() => setIsAuthOpen(false)}
             onLoginSuccess={(role) => {
-              if (role === 'ADMIN' || role === 'MANAGER') {
+              if (role === 'TECHNICIAN') {
+                setActiveTab('technician');
+              } else if (
+                role === 'SUPER_ADMIN' ||
+                role === 'STAFF_ADMIN' ||
+                role === 'ADMIN' ||
+                role === 'MANAGER'
+              ) {
                 setActiveTab('admin');
+              } else {
+                setActiveTab('account');
               }
             }}
           />

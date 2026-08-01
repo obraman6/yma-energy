@@ -20,6 +20,7 @@ import { useCartStore } from '../../store/useCartStore';
 import { useOrdersStore } from '../../store/useOrdersStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
+import { usePaymentGatewayStore } from '../../store/usePaymentGatewayStore';
 import { PaymentMethod, Order } from '../../types';
 
 interface CartViewProps {
@@ -59,6 +60,36 @@ export const CartView: React.FC<CartViewProps> = ({
 
   const { placeOrder } = useOrdersStore();
   const { user } = useAuthStore();
+  const { language } = useLanguage();
+  const { gateways } = usePaymentGatewayStore();
+
+  // ONLY active payment gateways configured by admin
+  const activeGateways = gateways.filter((gw) => gw.isActive);
+
+  // Current active gateway object matching selected paymentMethod
+  const currentGateway = activeGateways.find(
+    (gw) =>
+      gw.name === paymentMethod ||
+      gw.nameSw === paymentMethod ||
+      (language === 'sw' ? gw.nameSw : gw.name) === paymentMethod
+  ) || activeGateways[0];
+
+  // Auto-select valid active gateway if current paymentMethod is disabled or not set
+  React.useEffect(() => {
+    if (activeGateways.length > 0) {
+      const exists = activeGateways.some(
+        (gw) =>
+          gw.name === paymentMethod ||
+          gw.nameSw === paymentMethod ||
+          (language === 'sw' ? gw.nameSw : gw.name) === paymentMethod
+      );
+      if (!exists) {
+        const first = activeGateways[0];
+        const defaultName = language === 'sw' ? (first.nameSw || first.name) : first.name;
+        setPaymentInfo({ paymentMethod: defaultName as PaymentMethod });
+      }
+    }
+  }, [activeGateways, paymentMethod, language, setPaymentInfo]);
 
   const [inputCoupon, setInputCoupon] = useState('');
   const [couponFeedback, setCouponFeedback] = useState<string | null>(null);
@@ -96,18 +127,41 @@ export const CartView: React.FC<CartViewProps> = ({
       return;
     }
 
+    const finalName = (customerName || user.name || '').trim();
+    const finalPhone = (customerPhone || user.phone || '').trim();
+    const finalAddress = (shippingAddress || '').trim();
+    const finalRegion = (selectedRegion || '').trim();
+
+    if (!finalName || !finalPhone || !finalAddress || !finalRegion) {
+      useToastStore.getState().showToast({
+        title: 'Taarifa za Anwani Zinatakiwa 📍',
+        message: 'Tafadhali jaza Jina, Namba ya Simu, Mkoa na Anwani kamili ya Mtaa/Eneo la kufikishiwa mzigo.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    if (!paymentPhone.trim() && !paymentMethod.includes('Bank') && !paymentMethod.includes('Delivery')) {
+      useToastStore.getState().showToast({
+        title: 'Namba ya Simu ya Malipo Inatakiwa 📱',
+        message: 'Tafadhali jaza namba ya simu iliyofanya au inayofanya malipo.',
+        type: 'warning',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const newOrder = await placeOrder({
         userId: user.id,
-        customerName: customerName || user.name || 'Mteja',
-        customerPhone: customerPhone || user.phone || '',
-        shippingAddress: shippingAddress || 'Dar es Salaam',
-        region: selectedRegion || 'Dar es Salaam',
+        customerName: finalName,
+        customerPhone: finalPhone,
+        shippingAddress: finalAddress,
+        region: finalRegion,
         paymentMethod,
-        paymentRef: transactionRef || '',
-        paymentPhone: paymentPhone || customerPhone || user.phone || '',
+        paymentRef: transactionRef.trim(),
+        paymentPhone: paymentPhone.trim() || finalPhone,
         items,
         subtotalTzs: subtotal,
         discountTzs: discountAmount,
@@ -329,42 +383,76 @@ export const CartView: React.FC<CartViewProps> = ({
               <span>{t('paymentMethod')}</span>
             </h3>
 
-            {/* Radio Options */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {[
-                'M-Pesa',
-                'Airtel Money',
-                'Tigo Pesa',
-                'HaloPesa',
-                'Bank Transfer (CRDB / NMB)',
-                'Pay on Delivery',
-              ].map((pm) => (
-                <button
-                  key={pm}
-                  type="button"
-                  onClick={() => setPaymentInfo({ paymentMethod: pm as PaymentMethod })}
-                  className={`p-3 rounded-xl border text-xs font-bold transition-all ${
-                    paymentMethod === pm
-                      ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                  }`}
-                >
-                  {pm}
-                </button>
-              ))}
-            </div>
+            {/* Radio Options for Active Payment Gateways */}
+            {activeGateways.length === 0 ? (
+              <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs space-y-1">
+                <p className="font-extrabold flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-amber-500" />
+                  <span>Hakuna Njia ya Malipo Iliyowezeshwa Kwa Sasa</span>
+                </p>
+                <p className="text-[11px] opacity-90">
+                  Msimamizi wa mfumo amezima njia zote za malipo kwa muda. Tafadhali wasiliana nasi kwa usaidizi zaidi.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {activeGateways.map((gw) => {
+                  const name = language === 'sw' ? (gw.nameSw || gw.name) : gw.name;
+                  const isSelected =
+                    paymentMethod === name ||
+                    paymentMethod === gw.name ||
+                    paymentMethod === gw.nameSw;
+
+                  return (
+                    <button
+                      key={gw.id}
+                      type="button"
+                      onClick={() => setPaymentInfo({ paymentMethod: name as PaymentMethod })}
+                      className={`p-3 rounded-xl border text-xs font-bold transition-all text-left flex flex-col justify-between ${
+                        isSelected
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500/50'
+                      }`}
+                    >
+                      <span className="leading-tight">{name}</span>
+                      {gw.badge && (
+                        <span className={`text-[9px] mt-1 px-1.5 py-0.5 rounded font-extrabold w-fit ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                        }`}>
+                          {gw.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Merchant Payment Instructions Card */}
-            <div className="p-4 rounded-xl bg-slate-900 text-white space-y-2 text-xs">
-              <p className="font-bold text-amber-400">
-                Lipa Namba Instructions:
-              </p>
-              <p className="text-slate-300">
-                {paymentMethod.includes('Bank')
-                  ? t('bankTransferInfo')
-                  : t('lipaNambaInfo')}
-              </p>
-            </div>
+            {currentGateway && activeGateways.length > 0 && (
+              <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2 text-xs border border-slate-800 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <span className="font-extrabold text-amber-400">
+                    {language === 'sw' ? (currentGateway.nameSw || currentGateway.name) : currentGateway.name}
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+                    {currentGateway.accountNumber}
+                  </span>
+                </div>
+
+                <div className="space-y-1 text-slate-300 pt-1">
+                  <p className="text-[11px]">
+                    <strong className="text-slate-200">Jina la Akaunti / Kampuni:</strong> {currentGateway.accountName}
+                  </p>
+                  <p className="text-[11px]">
+                    <strong className="text-slate-200">Namba ya Malipo:</strong> <span className="font-mono text-amber-300 font-bold">{currentGateway.accountNumber}</span>
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-1 italic">
+                    {language === 'sw' ? (currentGateway.instructionsSw || currentGateway.instructions) : currentGateway.instructions}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Payment Phone & Transaction Reference Input */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

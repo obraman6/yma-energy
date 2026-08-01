@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { RepairRequest, RepairStatus } from '../types';
 import { db } from '../lib/firebase';
 import { sendAdminEmailTrigger } from '../services/emailService';
+import { useNotificationStore } from './useNotificationStore';
 import {
   collection,
   onSnapshot,
@@ -17,7 +18,9 @@ interface RepairsState {
   initFirebaseSync: () => void;
 
   createRepairTicket: (req: Omit<RepairRequest, 'id' | 'requestNumber' | 'status' | 'createdAt'>) => Promise<RepairRequest>;
-  dispatchTechnician: (ticketId: string, techName: string) => Promise<void>;
+  dispatchTechnician: (ticketId: string, techName: string, techPhone?: string, techId?: string, techEmail?: string) => Promise<void>;
+  respondToRepairAssignment: (ticketId: string, action: 'ACCEPTED' | 'REJECTED', techNotes?: string, techPhone?: string) => Promise<void>;
+  updateRepairTechProgress: (ticketId: string, status: RepairStatus, techNotes?: string) => Promise<void>;
   updateRepairStatus: (ticketId: string, status: RepairStatus) => Promise<void>;
 }
 
@@ -33,10 +36,8 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
     onSnapshot(
       repairsRef,
       (snapshot) => {
-        if (snapshot.docs.length > 0) {
-          const remoteRepairs: RepairRequest[] = snapshot.docs.map((d) => d.data() as RepairRequest);
-          set({ repairRequests: remoteRepairs });
-        }
+        const remoteRepairs: RepairRequest[] = snapshot.docs.map((d) => d.data() as RepairRequest);
+        set({ repairRequests: remoteRepairs });
       },
       (err) => console.error('Firestore repairs sync error:', err)
     );
@@ -61,6 +62,16 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
       console.error('Error creating repair ticket in Firebase:', err);
     }
 
+    // Trigger notification
+    useNotificationStore.getState().addNotification({
+      title: `Tiketi Mpya ya Dharura: ${newTicket.requestNumber}`,
+      titleSw: `Tiketi Mpya ya Dharura: ${newTicket.requestNumber}`,
+      message: `Mteja ${newTicket.customerName} amefungua tiketi ya dharura (${newTicket.equipmentType}). Simu: ${newTicket.phone}.`,
+      messageSw: `Mteja ${newTicket.customerName} amefungua tiketi ya dharura (${newTicket.equipmentType}). Simu: ${newTicket.phone}.`,
+      type: 'maintenance',
+      isPush: true,
+    });
+
     // Trigger real-time admin email notification
     sendAdminEmailTrigger({
       type: 'repair',
@@ -77,20 +88,113 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
     return newTicket;
   },
 
-  dispatchTechnician: async (ticketId, techName) => {
+  dispatchTechnician: async (ticketId, techName, techPhone, techId, techEmail) => {
+    const target = get().repairRequests.find((r) => r.id === ticketId);
+    const assignedPhone = techPhone || target?.assignedTechnicianPhone || '0754 000 111';
+
+    const patch = {
+      assignedTechnician: techName,
+      assignedTechnicianPhone: assignedPhone,
+      assignedTechnicianId: techId || '',
+      assignedTechnicianEmail: techEmail || '',
+      techResponseStatus: 'PENDING' as const,
+      status: 'Technician Dispatched' as RepairStatus,
+    };
+
     set((state) => ({
       repairRequests: state.repairRequests.map((r) =>
-        r.id === ticketId ? { ...r, assignedTechnician: techName, status: 'Technician Dispatched' } : r
+        r.id === ticketId ? { ...r, ...patch } : r
       ),
     }));
 
     try {
-      await updateDoc(doc(db, 'repairs', ticketId), {
-        assignedTechnician: techName,
-        status: 'Technician Dispatched',
-      });
+      await updateDoc(doc(db, 'repairs', ticketId), patch);
     } catch (err) {
       console.error('Error dispatching technician in Firebase:', err);
+    }
+
+    if (target) {
+      useNotificationStore.getState().addNotification({
+        title: `Fundi Apangiwa: Tiketi #${target.requestNumber}`,
+        titleSw: `Fundi Apangiwa: Tiketi #${target.requestNumber}`,
+        message: `Fundi ${techName} (Simu: ${assignedPhone}) amepangiwa tiketi ya matengenezo #${target.requestNumber}.`,
+        messageSw: `Fundi ${techName} (Simu: ${assignedPhone}) amepangiwa tiketi ya matengenezo #${target.requestNumber}.`,
+        type: 'maintenance',
+        isPush: true,
+      });
+    }
+  },
+
+  respondToRepairAssignment: async (ticketId, action, techNotes = '', techPhone = '') => {
+    const target = get().repairRequests.find((r) => r.id === ticketId);
+    const newStatus: RepairStatus = action === 'ACCEPTED' ? 'Accepted' : 'Rejected';
+    const now = new Date().toLocaleString();
+    const phoneToSave = techPhone || target?.assignedTechnicianPhone || '0754 000 111';
+
+    const patch = {
+      techResponseStatus: action,
+      status: newStatus,
+      techResponseDate: now,
+      assignedTechnicianPhone: phoneToSave,
+      ...(techNotes ? { techNotes } : {}),
+    };
+
+    set((state) => ({
+      repairRequests: state.repairRequests.map((r) =>
+        r.id === ticketId ? { ...r, ...patch } : r
+      ),
+    }));
+
+    try {
+      await updateDoc(doc(db, 'repairs', ticketId), patch);
+    } catch (err) {
+      console.error('Error updating repair response in Firebase:', err);
+    }
+
+    if (target) {
+      const isAcc = action === 'ACCEPTED';
+      useNotificationStore.getState().addNotification({
+        title: isAcc ? `✅ Fundi Amekubali Tiketi #${target.requestNumber}` : `❌ Fundi Amekataa Tiketi #${target.requestNumber}`,
+        titleSw: isAcc ? `✅ Fundi Amekubali Tiketi #${target.requestNumber}` : `❌ Fundi Amekataa Tiketi #${target.requestNumber}`,
+        message: isAcc
+          ? `Fundi ${target.assignedTechnician} (Simu: ${phoneToSave}) amekubali rasmi tiketi ya matengenezo. Hali: SAFARINI / ON-SITE.`
+          : `Fundi ${target.assignedTechnician} amekataa tiketi #${target.requestNumber}. Admin anapanga fundi mwingine.`,
+        messageSw: isAcc
+          ? `Fundi ${target.assignedTechnician} (Simu: ${phoneToSave}) amekubali rasmi tiketi ya matengenezo. Hali: SAFARINI / ON-SITE.`
+          : `Fundi ${target.assignedTechnician} amekataa tiketi #${target.requestNumber}. Admin anapanga fundi mwingine.`,
+        type: 'maintenance',
+        isPush: true,
+      });
+    }
+  },
+
+  updateRepairTechProgress: async (ticketId, status, techNotes) => {
+    const target = get().repairRequests.find((r) => r.id === ticketId);
+    const patch: any = { status };
+    if (techNotes) patch.techNotes = techNotes;
+
+    set((state) => ({
+      repairRequests: state.repairRequests.map((r) =>
+        r.id === ticketId ? { ...r, ...patch } : r
+      ),
+    }));
+
+    try {
+      await updateDoc(doc(db, 'repairs', ticketId), patch);
+    } catch (err) {
+      console.error('Error updating repair technician progress in Firebase:', err);
+    }
+
+    if (target) {
+      const techPhone = target.assignedTechnicianPhone || '0754 000 111';
+      useNotificationStore.getState().addNotification({
+        title: `🔄 Maendeleo ya Matengenezo: Tiketi #${target.requestNumber}`,
+        titleSw: `🔄 Maendeleo ya Matengenezo: Tiketi #${target.requestNumber}`,
+        message: `Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea vyema.'}`,
+        messageSw: `Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea vyema.'}`,
+        type: 'maintenance',
+        isPush: true,
+      });
     }
   },
 

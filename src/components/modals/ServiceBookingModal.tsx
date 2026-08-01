@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   Send,
 } from 'lucide-react';
-import { SolarService } from '../../types';
+import { SolarService, ServiceRequest } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 import { useServicesStore } from '../../store/useServicesStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -24,6 +24,7 @@ interface ServiceBookingModalProps {
   onClose: () => void;
   onOpenMapPicker: () => void;
   onRequireAuth?: () => void;
+  onOpenTechnicianStatusModal?: (item: ServiceRequest) => void;
 }
 
 export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
@@ -32,6 +33,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
   onClose,
   onOpenMapPicker,
   onRequireAuth,
+  onOpenTechnicianStatusModal,
 }) => {
   const { t, language } = useLanguage();
   const { createServiceRequest } = useServicesStore();
@@ -41,7 +43,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
   const [fullName, setFullName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [region, setRegion] = useState('Dar es Salaam');
+  const [region, setRegion] = useState('');
   const [district, setDistrict] = useState('');
   const [streetAddress, setStreetAddress] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
@@ -50,7 +52,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
   const [priority, setPriority] = useState<'Normal' | 'Urgent'>('Normal');
   const [notes, setNotes] = useState('');
 
-  const [submittedRef, setSubmittedRef] = useState<string | null>(null);
+  const [submittedReq, setSubmittedReq] = useState<ServiceRequest | null>(null);
 
   if (!isOpen || !service) return null;
 
@@ -66,9 +68,19 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
       return;
     }
 
+    if (!region.trim() || !district.trim() || !streetAddress.trim() || !preferredDate) {
+      showToast({
+        title: 'Taarifa Hazijakamilika 📍',
+        message: 'Tafadhali chagua Mkoa, ujaze Wilaya, Mtaa na Tarehe unayohitaji huduma.',
+        type: 'warning',
+      });
+      return;
+    }
+
     const req = await createServiceRequest({
       serviceId: service.id,
       serviceName: service.name,
+      userId: user.id,
       customerName: fullName || user.name,
       phone: phone || user.phone || '',
       email: email || user.email,
@@ -82,7 +94,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
       notes,
     });
 
-    setSubmittedRef(req.requestNumber);
+    setSubmittedReq(req);
   };
 
   return (
@@ -105,7 +117,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
           </div>
           <button
             onClick={() => {
-              setSubmittedRef(null);
+              setSubmittedReq(null);
               onClose();
             }}
             className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white"
@@ -116,8 +128,8 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
         {/* Body */}
         <div className="p-6 max-h-[75vh] overflow-y-auto">
-          {submittedRef ? (
-            <div className="py-8 text-center space-y-4">
+          {submittedReq ? (
+            <div className="py-6 text-center space-y-4">
               <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-md">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
@@ -127,24 +139,40 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                   {t('bookingSuccess')}
                 </h3>
                 <p className="text-2xl font-black text-amber-600 dark:text-amber-500 mt-2 font-mono">
-                  {submittedRef}
+                  {submittedReq.requestNumber}
                 </p>
               </div>
 
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                Our solar engineering dispatch team will contact you on{' '}
-                <strong className="text-slate-900 dark:text-slate-100">{phone}</strong> within 1 hour to confirm site access.
+                Timu yetu ya wahandisi wa solar inakagua ombi lako. Unaweza kufuatilia status ya fundi wako muda wowote kwa wakati halisi.
               </p>
 
-              <button
-                onClick={() => {
-                  setSubmittedRef(null);
-                  onClose();
-                }}
-                className="mt-4 px-6 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs"
-              >
-                Done
-              </button>
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                {onOpenTechnicianStatusModal && (
+                  <button
+                    onClick={() => {
+                      const req = submittedReq;
+                      setSubmittedReq(null);
+                      onClose();
+                      onOpenTechnicianStatusModal(req);
+                    }}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-white font-extrabold text-xs shadow-md shadow-amber-500/20 flex items-center justify-center gap-2"
+                  >
+                    <Wrench className="w-4 h-4" />
+                    <span>Fuatilia Status ya Fundi Mara Moja (Live Tracking)</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setSubmittedReq(null);
+                    onClose();
+                  }}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs"
+                >
+                  Funga (Done)
+                </button>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

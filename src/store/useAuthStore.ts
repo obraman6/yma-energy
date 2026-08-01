@@ -26,7 +26,7 @@ interface AuthState {
   initFirebaseSync: () => void;
   login: (email: string, password?: string) => Promise<AuthResult>;
   register: (name: string, email: string, phone: string, password?: string) => Promise<AuthResult>;
-  createStaffUser: (name: string, email: string, phone: string, role: 'MANAGER' | 'ADMIN', password?: string) => Promise<AuthResult>;
+  createStaffUser: (name: string, email: string, phone: string, role: UserRole, password?: string) => Promise<AuthResult>;
   resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (updated: Partial<User>) => Promise<void>;
@@ -253,7 +253,7 @@ export const useAuthStore = create<AuthState>()(
   },
 
   // ADMIN/MANAGER ONLY: Create staff user (Manager or Admin)
-  createStaffUser: async (name, email, phone, role, password = 'Password123!') => {
+  createStaffUser: async (name, email, phone, role, password) => {
     set({ isLoading: true });
     const cleanEmail = email.trim().toLowerCase();
     const now = new Date().toISOString();

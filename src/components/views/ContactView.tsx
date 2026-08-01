@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, Building2, CheckCircle2, Loader2 } from 'lucide-react';
-import { initialBranches } from '../../data/mockData';
+import { useBranchStore } from '../../store/useBranchStore';
+import { useCompanySettingsStore } from '../../store/useCompanySettingsStore';
 import { Branch } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
 import { db } from '../../lib/firebase';
@@ -15,6 +16,14 @@ interface ContactViewProps {
 export const ContactView: React.FC<ContactViewProps> = ({ openBranchMapModal }) => {
   const { t } = useLanguage();
   const showToast = useToastStore((s) => s.showToast);
+  const { branches, initFirebaseSync: initBranchSync } = useBranchStore();
+  const { settings, initFirebaseSync: initSettingsSync } = useCompanySettingsStore();
+
+  useEffect(() => {
+    initBranchSync();
+    initSettingsSync();
+  }, [initBranchSync, initSettingsSync]);
+
   const [submitted, setSubmitted] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [name, setName] = useState('');
@@ -169,7 +178,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ openBranchMapModal }) 
                 <Phone className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <div>
                   <p className="text-[10px] text-slate-400">{t('phoneLabel')}</p>
-                  <p className="font-mono font-bold">+255 622 359 874</p>
+                  <p className="font-mono font-bold">{settings.companyPhone}</p>
                 </div>
               </div>
 
@@ -177,7 +186,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ openBranchMapModal }) 
                 <Mail className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                 <div>
                   <p className="text-[10px] text-slate-400">{t('emailLabel')}</p>
-                  <p className="font-mono font-bold">support@ymaenergy.co.tz</p>
+                  <p className="font-mono font-bold">{settings.companyEmail}</p>
                 </div>
               </div>
 
@@ -185,6 +194,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ openBranchMapModal }) 
                 <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <div>
                   <p className="text-[10px] text-slate-400">{t('workingHours')}</p>
+                  <p className="text-[11px] font-medium text-slate-200">{settings.workingHours}</p>
                 </div>
               </div>
             </div>
@@ -200,7 +210,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ openBranchMapModal }) 
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-          {initialBranches.map((branch) => (
+          {branches.map((branch) => (
             <div
               key={branch.id}
               className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-sm hover:shadow-md transition-shadow h-auto flex flex-col justify-between"
@@ -212,7 +222,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ openBranchMapModal }) 
                     <span>{branch.city}</span>
                   </div>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold">
-                    Open
+                    {branch.isHeadquarters ? 'Headquarters' : 'Regional Branch'}
                   </span>
                 </div>
 
@@ -223,6 +233,23 @@ export const ContactView: React.FC<ContactViewProps> = ({ openBranchMapModal }) 
                 <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   {branch.address}
                 </p>
+
+                <div className="space-y-0.5 text-[11px] text-slate-600 dark:text-slate-300 pt-1">
+                  <p className="flex items-center gap-1 font-mono">
+                    <Phone className="w-3 h-3 text-amber-500 shrink-0" />
+                    <span>{branch.phone}</span>
+                  </p>
+                  <p className="flex items-center gap-1 font-mono">
+                    <Mail className="w-3 h-3 text-amber-500 shrink-0" />
+                    <span>{branch.email}</span>
+                  </p>
+                  {branch.workingHours && (
+                    <p className="flex items-center gap-1 text-slate-500 text-[10px]">
+                      <Clock className="w-3 h-3 text-amber-500 shrink-0" />
+                      <span>{branch.workingHours}</span>
+                    </p>
+                  )}
+                </div>
               </div>
 
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">

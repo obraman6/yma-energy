@@ -1,6 +1,6 @@
 export type Language = 'en' | 'sw';
 export type ThemeMode = 'light' | 'dark';
-export type UserRole = 'CUSTOMER' | 'MANAGER' | 'ADMIN';
+export type UserRole = 'SUPER_ADMIN' | 'STAFF_ADMIN' | 'ADMIN' | 'MANAGER' | 'TECHNICIAN' | 'CUSTOMER';
 
 export interface User {
   id: string;
@@ -65,7 +65,7 @@ export interface SolarService {
   imageUrl: string;
 }
 
-export type ServiceStatus = 'Pending' | 'Queued' | 'Technician Dispatched' | 'Completed' | 'Cancelled';
+export type ServiceStatus = 'Pending' | 'Queued' | 'Technician Dispatched' | 'Accepted' | 'En-Route' | 'On-Site' | 'Completed' | 'Rejected' | 'Cancelled';
 
 export interface ServiceRequest {
   id: string;
@@ -85,12 +85,18 @@ export interface ServiceRequest {
   priority: 'Normal' | 'Urgent';
   notes?: string;
   assignedTechnician?: string;
+  assignedTechnicianId?: string;
+  assignedTechnicianPhone?: string;
+  assignedTechnicianEmail?: string;
+  techResponseStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  techNotes?: string;
+  techResponseDate?: string;
   status: ServiceStatus;
   createdAt: string;
 }
 
 export type RepairPriority = 'Normal' | 'Urgent';
-export type RepairStatus = 'Received' | 'Queued' | 'Technician Dispatched' | 'Resolved';
+export type RepairStatus = 'Received' | 'Queued' | 'Technician Dispatched' | 'Accepted' | 'En-Route' | 'On-Site' | 'Resolved' | 'Rejected';
 
 export interface RepairRequest {
   id: string;
@@ -106,6 +112,12 @@ export interface RepairRequest {
   hasPhoto: boolean;
   photoUrl?: string;
   assignedTechnician?: string;
+  assignedTechnicianId?: string;
+  assignedTechnicianPhone?: string;
+  assignedTechnicianEmail?: string;
+  techResponseStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  techNotes?: string;
+  techResponseDate?: string;
   status: RepairStatus;
   createdAt: string;
 }
@@ -206,6 +218,8 @@ export interface Branch {
   address: string;
   phone: string;
   email: string;
+  workingHours?: string;
+  managerName?: string;
   latitude?: number;
   longitude?: number;
   lat?: number;
