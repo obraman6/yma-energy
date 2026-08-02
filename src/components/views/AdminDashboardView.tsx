@@ -665,9 +665,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div>
                 <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                   <Wrench className="w-5 h-5 text-amber-500" />
-                  <span>Huduma Zinazotolewa na YMA Energy (Services Offered)</span>
+                  <span>{t('servicesOfferedTitle', 'Huduma Zinazotolewa na YMA Energy')}</span>
                 </h2>
-                <p className="text-xs text-slate-500">Hariri au ongeza huduma za ufungaji na ukaguzi wa umeme wa jua.</p>
+                <p className="text-xs text-slate-500">{t('servicesOfferedSub', 'Hariri au ongeza huduma za ufungaji na ukaguzi wa umeme wa jua.')}</p>
               </div>
               <button
                 onClick={onOpenAddServiceModal}
@@ -732,7 +732,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           {/* Section B: Customer Service Bookings */}
           <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
-              Maombi ya Huduma kutoka kwa Wateja (Customer Field Requests)
+              {t('customerFieldRequests', 'Maombi ya Huduma kutoka kwa Wateja')}
             </h2>
 
             <div className="space-y-3">
@@ -743,7 +743,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 >
                   <div className="flex justify-between font-bold">
                     <span className="font-mono text-amber-600">#{sr.requestNumber} - {sr.serviceName}</span>
-                    <span className="text-sky-600">{sr.status}</span>
+                    <span className={(sr.status as string) === 'Completed' || (sr.status as string) === 'Imekamilika' ? "text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1" : "text-sky-600"}>
+                      {((sr.status as string) === 'Completed' || (sr.status as string) === 'Imekamilika') ? '✅ ' : ''}{sr.status}
+                    </span>
                   </div>
                   <p>Client: {sr.customerName} ({sr.phone}) - {sr.region}</p>
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -820,10 +822,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div>
                 <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                   <Phone className="w-5 h-5 text-amber-500" />
-                  <span>Taarifa za Mawasiliano za Kampuni (Company 24/7 Support Details)</span>
+                  <span>{t('companySupportTitle', 'Taarifa za Mawasiliano za Kampuni')}</span>
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Super Admin & Staff: Hariri namba za simu, barua pepe ya msaada, na masaa ya kazi. Mabadiliko haya yataonekana kote kwenye app (Footer, Contact View, Invoices).
+                  {t('companySupportSub', 'Super Admin & Staff: Hariri namba za simu, barua pepe ya msaada, na masaa ya kazi.')}
                 </p>
               </div>
               <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
@@ -836,7 +838,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Namba ya Simu ya Huduma (Phone Support) *</span>
+                    <span>{t('phoneSupportLabel', 'Namba ya Simu ya Huduma')} *</span>
                   </label>
                   <input
                     type="text"
@@ -851,7 +853,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-sky-500" />
-                    <span>Barua Pepe ya Msaada (Support & Admin Email) *</span>
+                    <span>{t('supportEmailLabel', 'Barua Pepe ya Msaada')} *</span>
                   </label>
                   <input
                     type="email"
@@ -869,7 +871,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Shield className="w-3.5 h-3.5 text-rose-500" />
-                    <span>Hotline ya Dharura (Emergency Hotline)</span>
+                    <span>{t('emergencyHotlineLabel', 'Hotline ya Dharura')}</span>
                   </label>
                   <input
                     type="text"
@@ -883,7 +885,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="space-y-1 sm:col-span-2 lg:col-span-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Saa za Huduma / Kazi (Working Hours)</span>
+                    <span>{t('workingHoursLabel', 'Saa za Huduma / Kazi')}</span>
                   </label>
                   <input
                     type="text"
@@ -897,7 +899,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <div className="space-y-1 sm:col-span-2">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Anwani ya Makao Makuu (HQ Address)</span>
+                    <span>{t('hqAddressLabel', 'Anwani ya Makao Makuu')}</span>
                   </label>
                   <input
                     type="text"
@@ -933,10 +935,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <div>
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-amber-500" />
-                <span>Matawi ya YMA ENERGY GROUP (Branch Locations)</span>
+                <span>{t('branchLocationsTitle', 'Matawi ya YMA ENERGY GROUP')}</span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Ongeza au hariri maeneo halisi ya matawi ya kampuni, anwani, namba za simu, barua pepe, na mameneja.
+                {t('branchLocationsSub', 'Ongeza au hariri maeneo halisi ya matawi ya kampuni, anwani, namba za simu, barua pepe, na mameneja.')}
               </p>
             </div>
 
@@ -945,7 +947,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Ongeza Tawi Jipya (Add Branch)</span>
+              <span>{t('addBranchBtn', 'Ongeza Tawi Jipya')}</span>
             </button>
           </div>
 
@@ -1031,10 +1033,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <div>
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-amber-500" />
-                <span>Njia za Malipo (Select & Configure Payment Gateways)</span>
+                <span>{t('paymentGatewaysTitle', 'Njia za Malipo')}</span>
               </h2>
               <p className="text-xs text-slate-500">
-                Weka au hariri Lipa Namba za M-Pesa, Tigo Pesa, Airtel Money, Akaunti za Benki au Kadi.
+                {t('paymentGatewaysSub', 'Weka au hariri Lipa Namba za M-Pesa, Tigo Pesa, Airtel Money, Akaunti za Benki au Kadi.')}
               </p>
             </div>
 
@@ -1155,7 +1157,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Create Staff Account (Manager/Admin)</span>
+              <span>{t('createStaffAccountBtn', 'Tengeneza Akaunti ya Staff')}</span>
             </button>
           </div>
 
@@ -1369,9 +1371,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 key={rr.id}
                 className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-sm text-xs"
               >
-                <div className="flex justify-between font-bold">
+                <div className="flex justify-between items-center font-bold">
                   <span className="font-mono text-rose-600">#{rr.requestNumber} - {rr.equipmentType}</span>
-                  <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">{rr.priority}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
+                      (rr.status as string) === 'Resolved' || (rr.status as string) === 'Completed' || (rr.status as string) === 'Imerekebishwa'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                    }`}>
+                      {((rr.status as string) === 'Resolved' || (rr.status as string) === 'Completed' || (rr.status as string) === 'Imerekebishwa') ? '✅ ' : ''}{rr.status}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">{rr.priority}</span>
+                  </div>
                 </div>
                 <p>Client: {rr.customerName} ({rr.phone})</p>
                 <p className="italic text-slate-500">"{rr.description}"</p>
@@ -1698,7 +1709,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white font-extrabold text-xs flex items-center gap-2 shadow-md transition-all shrink-0 cursor-pointer"
               >
                 <Mail className="w-4 h-4" />
-                <span>{isSendingTestEmail ? 'Inatuma Jaribio...' : 'Tuma Barua Pepe ya Jaribio (Test Alert)'}</span>
+                <span>{isSendingTestEmail ? t('sendingTestEmail', 'Inatuma Jaribio...') : t('sendTestAlertBtn', 'Tuma Barua Pepe ya Jaribio')}</span>
               </button>
             </div>
 
@@ -1724,7 +1735,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           <div className="space-y-4">
             <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-500" />
-              <span>Kumbukumbu za Barua Pepe Zilizotumwa (Real-Time Dispatched Email Alerts)</span>
+              <span>{t('dispatchedEmailAlertsTitle', 'Kumbukumbu za Barua Pepe Zilizotumwa')}</span>
             </h3>
 
             {emailAlertsList.length === 0 ? (
@@ -1812,7 +1823,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-amber-500" />
                 <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                  {editingBranch ? 'Hariri Taarifa za Tawi' : 'Ongeza Tawi Jipya (Add Branch)'}
+                  {editingBranch ? t('editBranchTitle', 'Hariri Taarifa za Tawi') : t('addBranchTitle', 'Ongeza Tawi Jipya')}
                 </h3>
               </div>
               <button
@@ -1827,7 +1838,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Jina la Tawi (Branch Name) *
+                    {t('branchNameLabel', 'Jina la Tawi')} *
                   </label>
                   <input
                     type="text"
@@ -1841,7 +1852,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Mji / Mkoa (City / Region) *
+                    {t('branchCityLabel', 'Mji / Mkoa')} *
                   </label>
                   <input
                     type="text"
@@ -1856,7 +1867,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Anwani Halisi ya Tawi (Full Address) *
+                  {t('branchAddressLabel', 'Anwani Halisi ya Tawi')} *
                 </label>
                 <input
                   type="text"
@@ -1871,7 +1882,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Namba ya Simu ya Tawi (Phone) *
+                    {t('branchPhoneLabel', 'Namba ya Simu ya Tawi')} *
                   </label>
                   <input
                     type="text"
@@ -1885,7 +1896,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Barua Pepe ya Tawi (Branch Email) *
+                    {t('branchEmailLabel', 'Barua Pepe ya Tawi')} *
                   </label>
                   <input
                     type="email"
@@ -1901,7 +1912,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Saa za Kazi (Working Hours)
+                    {t('workingHoursLabel', 'Saa za Kazi')}
                   </label>
                   <input
                     type="text"
@@ -1914,7 +1925,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Meneja wa Tawi (Manager Name)
+                    {t('branchManagerLabel', 'Meneja wa Tawi')}
                   </label>
                   <input
                     type="text"

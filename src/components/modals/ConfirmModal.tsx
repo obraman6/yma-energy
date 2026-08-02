@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, LogOut, Trash2, X, Loader2 } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -19,12 +20,17 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = 'Ndio, Tekeleza',
-  cancelText = 'Ghairi',
+  confirmText,
+  cancelText,
   type = 'warning',
   isLoading = false,
 }) => {
+  const { t } = useLanguage();
+
   if (!isOpen) return null;
+
+  const resolvedCancelText = cancelText || t('cancelBtn', 'Ghairi');
+  const resolvedConfirmText = confirmText || t('confirmBtn', 'Ndio, Tekeleza');
 
   const Icon = type === 'logout' ? LogOut : type === 'delete' ? Trash2 : AlertTriangle;
   const iconBg =
@@ -69,7 +75,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             disabled={isLoading}
             className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            {cancelText}
+            {resolvedCancelText}
           </button>
 
           <button
@@ -81,10 +87,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Inatekeleza...</span>
+                <span>{t('processing', 'Inatekeleza...')}</span>
               </>
             ) : (
-              <span>{confirmText}</span>
+              <span>{resolvedConfirmText}</span>
             )}
           </button>
         </div>

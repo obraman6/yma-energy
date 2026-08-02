@@ -189,11 +189,19 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
 
     if (target) {
       const techPhone = target.assignedTechnicianPhone || '0754 000 111';
+      const isResolved = (status as string) === 'Resolved' || (status as string) === 'Completed' || (status as string) === 'Imerekebishwa';
+      const notifTitle = isResolved
+        ? `✅ MATENGENEZO YAMEKAMILIKA! Tiketi #${target.requestNumber}`
+        : `🔄 Maendeleo ya Matengenezo: Tiketi #${target.requestNumber}`;
+      const notifMsg = isResolved
+        ? `TAARIFA KWA ADMIN & CLIENT: Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) ametatua na kukamilisha matengenezo ya Tiketi #${target.requestNumber}! Mteja: ${target.customerName}. Field Notes: ${techNotes || 'Matengenezo yamekamilika kikamilifu.'}`
+        : `Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea vyema.'}`;
+
       useNotificationStore.getState().addNotification({
-        title: `🔄 Maendeleo ya Matengenezo: Tiketi #${target.requestNumber}`,
-        titleSw: `🔄 Maendeleo ya Matengenezo: Tiketi #${target.requestNumber}`,
-        message: `Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea vyema.'}`,
-        messageSw: `Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea vyema.'}`,
+        title: notifTitle,
+        titleSw: notifTitle,
+        message: notifMsg,
+        messageSw: notifMsg,
         type: 'maintenance',
         isPush: true,
       });

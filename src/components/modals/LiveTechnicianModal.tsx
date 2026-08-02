@@ -45,7 +45,13 @@ export const LiveTechnicianModal: React.FC<LiveTechnicianModalProps> = ({
   // Order of progression for Service Request & Repair Ticket
   // 1: Received, 2: Dispatched, 3: Accepted/En Route, 4: In Progress, 5: Completed
   const getStepLevel = () => {
-    if (currentStatus === 'Completed') return 5;
+    if (
+      currentStatus === 'Completed' ||
+      currentStatus === 'Resolved' ||
+      currentStatus === 'Imekamilika' ||
+      currentStatus === 'Imerekebishwa'
+    )
+      return 5;
     if (currentStatus === 'In Progress' || currentStatus === 'In Repair' || currentStatus === 'Testing') return 4;
     if (currentStatus === 'Accepted' || item.techResponseStatus === 'ACCEPTED') return 3;
     if (currentStatus === 'Technician Dispatched' || item.assignedTechnician) return 2;
@@ -137,19 +143,20 @@ export const LiveTechnicianModal: React.FC<LiveTechnicianModalProps> = ({
                   {steps.map((step) => {
                     const isPassed = step.id < stepLevel;
                     const isCurrent = step.id === stepLevel;
+                    const isFullyCompletedStep = step.id === 5 && stepLevel === 5;
 
                     return (
                       <div key={step.id} className="flex flex-col items-center text-center">
                         <div
                           className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black text-xs transition-all ${
-                            isPassed
+                            isPassed || isFullyCompletedStep
                               ? 'bg-emerald-500 text-white ring-2 ring-emerald-500/30'
                               : isCurrent
                               ? 'bg-amber-500 text-white ring-4 ring-amber-500/25 animate-bounce'
                               : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
                           }`}
                         >
-                          {isPassed ? <Check className="w-4 h-4" /> : step.id}
+                          {isPassed || isFullyCompletedStep ? <Check className="w-4 h-4" /> : step.id}
                         </div>
                         <span
                           className={`text-[9px] sm:text-[10px] font-bold mt-2 max-w-[65px] sm:max-w-[80px] leading-tight ${

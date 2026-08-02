@@ -114,17 +114,6 @@ export const WarrantyClaimModal: React.FC<WarrantyClaimModalProps> = ({
                 </p>
               </div>
 
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={onOpenQrScanner}
-                  className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 hover:underline"
-                >
-                  <QrCode className="w-4 h-4" />
-                  <span>Scan QR Code on Packaging</span>
-                </button>
-              </div>
-
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                   {t('issueDescription')} *

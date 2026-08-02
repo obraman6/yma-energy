@@ -24,6 +24,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useServicesStore } from '../../store/useServicesStore';
 import { useRepairsStore } from '../../store/useRepairsStore';
 import { useToastStore } from '../../store/useToastStore';
+import { useLanguage } from '../../context/LanguageContext';
 import { ServiceRequest, RepairRequest, ServiceStatus, RepairStatus } from '../../types';
 
 interface TechnicianDashboardViewProps {
@@ -35,6 +36,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
 }) => {
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
+  const { t } = useLanguage();
 
   const { serviceRequests, respondToServiceAssignment, updateServiceTechProgress } = useServicesStore();
   const { repairRequests, respondToRepairAssignment, updateRepairTechProgress } = useRepairsStore();
@@ -365,7 +367,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                         className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md"
                       >
                         <Check className="w-4 h-4" />
-                        <span>Kubali Kazi (Accept Job)</span>
+                        <span>{t('acceptJobBtn', 'Kubali Kazi')}</span>
                       </button>
 
                       <button
@@ -373,7 +375,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                         className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
                       >
                         <X className="w-4 h-4" />
-                        <span>Kataa (Reject)</span>
+                        <span>{t('rejectBtn', 'Kataa')}</span>
                       </button>
                     </div>
                   </div>
@@ -435,7 +437,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                         className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md"
                       >
                         <Check className="w-4 h-4" />
-                        <span>Kubali Kazi (Accept Job)</span>
+                        <span>{t('acceptJobBtn', 'Kubali Kazi')}</span>
                       </button>
 
                       <button
@@ -443,7 +445,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                         className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
                       >
                         <X className="w-4 h-4" />
-                        <span>Kataa (Reject)</span>
+                        <span>{t('rejectBtn', 'Kataa')}</span>
                       </button>
                     </div>
                   </div>
@@ -514,7 +516,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        🚗 En-Route (Safarini)
+                        🚗 {t('statusEnRoute', 'Safarini')}
                       </button>
 
                       <button
@@ -525,20 +527,20 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        📍 On-Site (Eneon Naanza)
+                        📍 {t('statusOnSite', 'Eneo la Kazi')}
                       </button>
 
                       <button
                         onClick={() => handleUpdateRepairStatus(r.id, 'Resolved')}
                         className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
                       >
-                        ✅ Resolved (Imerekebishwa)
+                        ✅ {t('statusResolved', 'Imerekebishwa')}
                       </button>
                     </div>
 
                     <div className="pt-2">
                       <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                        Ripoti ya Kazi / Field Notes (Inaonekana kwa Manager):
+                        {t('fieldNotesLabel', 'Ripoti ya Kazi / Field Notes')}:
                       </label>
                       <input
                         type="text"
@@ -594,7 +596,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        🚚 En-Route (Nipo Njia)
+                        🚚 {t('statusEnRoute', 'Safarini')}
                       </button>
 
                       <button
@@ -605,14 +607,14 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        🛠️ On-Site (Ufungaji)
+                        🛠️ {t('statusOnSite', 'Eneo la Kazi')}
                       </button>
 
                       <button
                         onClick={() => handleUpdateServiceStatus(s.id, 'Completed')}
                         className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
                       >
-                        ✅ Completed (Imekamilika)
+                        ✅ {t('statusCompleted', 'Imekamilika')}
                       </button>
                     </div>
 
@@ -646,7 +648,9 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                 <div key={r.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1">
                   <div className="flex justify-between font-bold">
                     <span className="font-mono text-emerald-600">#{r.requestNumber} - {r.equipmentType}</span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">{r.status}</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold flex items-center gap-1">
+                      ✅ {r.status}
+                    </span>
                   </div>
                   <p className="text-slate-600 dark:text-slate-300">Mteja: {r.customerName} ({r.phone}) - {r.region}</p>
                   {r.techNotes && (
@@ -659,7 +663,9 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                 <div key={s.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1">
                   <div className="flex justify-between font-bold">
                     <span className="font-mono text-emerald-600">#{s.requestNumber} - {s.serviceName}</span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">{s.status}</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold flex items-center gap-1">
+                      ✅ {s.status}
+                    </span>
                   </div>
                   <p className="text-slate-600 dark:text-slate-300">Mteja: {s.customerName} ({s.phone}) - {s.region}</p>
                   {s.techNotes && (
