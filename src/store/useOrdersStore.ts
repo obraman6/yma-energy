@@ -28,7 +28,7 @@ interface OrdersState {
 }
 
 export const useOrdersStore = create<OrdersState>((set, get) => ({
-  orders: initialOrders,
+  orders: [],
   isFirebaseSynced: false,
   isLoading: true,
 
@@ -40,12 +40,8 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     onSnapshot(
       ordersRef,
       (snapshot) => {
-        if (snapshot.docs.length > 0) {
-          const remoteOrders: Order[] = snapshot.docs.map((d) => d.data() as Order);
-          set({ orders: remoteOrders, isLoading: false });
-        } else {
-          set({ orders: initialOrders, isLoading: false });
-        }
+        const remoteOrders: Order[] = snapshot.docs.map((d) => d.data() as Order);
+        set({ orders: remoteOrders, isLoading: false });
       },
       (err) => {
         console.error('Firestore orders sync error:', err);

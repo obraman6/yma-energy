@@ -42,7 +42,7 @@ interface ProductState {
 
 export const useProductStore = create<ProductState>((set, get) => ({
   products: initialProducts,
-  reviews: initialReviews,
+  reviews: [],
   selectedCategory: 'All',
   searchQuery: '',
   sortBy: 'rating',
@@ -76,10 +76,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
     onSnapshot(
       reviewsRef,
       (snapshot) => {
-        if (snapshot.docs.length > 0) {
-          const remoteReviews: CustomerReview[] = snapshot.docs.map((d) => d.data() as CustomerReview);
-          set({ reviews: remoteReviews });
-        }
+        const remoteReviews: CustomerReview[] = snapshot.docs.map((d) => d.data() as CustomerReview);
+        set({ reviews: remoteReviews });
       },
       (err) => console.error('Firestore reviews sync error:', err)
     );

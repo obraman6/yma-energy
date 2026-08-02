@@ -201,29 +201,7 @@ export const initialBranches: Branch[] = [
   },
 ];
 
-export const initialReviews: CustomerReview[] = [
-  {
-    id: 'rev-01',
-    productId: 'prod-02',
-    productName: 'Deye 8kW Hybrid Dual-MPPT Inverter (48V)',
-    customerName: 'Eng. Baraka Mwaipopo',
-    rating: 5,
-    comment: 'Invata hii ya Deye 8kW imetatua kabisa tatizo la kukatika umeme kwenye kliniki yetu Mikocheni. Inawasha AC na vifaa vya vipimo bila shida yoyote. Huduma ya YMA ENERGY GROUP ni ya kimataifa!',
-    adminReply: 'Asante sana Mhandisi Baraka! Furaha yetu ni kuona biashara yako inapata nishati isiyo na kikomo. Karibu tena YMA ENERGY GROUP.',
-    isPinned: true,
-    createdAt: '2026-02-10',
-  },
-  {
-    id: 'rev-02',
-    productId: 'prod-03',
-    productName: 'Felicity ESS 10kWh LiFePO4 Lithium Battery 51.2V',
-    customerName: 'Mama Salma Kimaro',
-    rating: 5,
-    comment: 'Betri hizi za Lithium kutoka YMA ENERGY GROUP ni imara mno! Tumetumia miezi 6 sasa Dodoma bila tatizo lolote. Mfumo unajaa haraka na kudumu usiku kucha.',
-    isPinned: true,
-    createdAt: '2026-02-15',
-  },
-];
+export const initialReviews: CustomerReview[] = [];
 
 export const initialAppliances: ApplianceLoad[] = [
   { id: 'app-1', name: 'LED Bulbs (Taa za LED)', defaultWatts: 10, category: 'Lighting' },
@@ -234,50 +212,6 @@ export const initialAppliances: ApplianceLoad[] = [
   { id: 'app-6', name: 'Water Submersible Pump (Pampu ya Maji)', defaultWatts: 750, category: 'Heavy Load' },
 ];
 
-export const initialOrders: Order[] = [
-  {
-    id: 'ord-sample-01',
-    orderNumber: 'ORD-98210',
-    invoiceNumber: 'INV-98210',
-    customerName: 'Josephat Masawe',
-    customerPhone: '+255 768 123 456',
-    shippingAddress: 'Plot 12, Block B, Tegeta Kibaoni',
-    region: 'Dar es Salaam',
-    district: 'Kinondoni',
-    items: [
-      {
-        product: initialProducts[0],
-        quantity: 4,
-      },
-      {
-        product: initialProducts[1],
-        quantity: 1,
-      },
-    ],
-    subtotal: 6370000,
-    deliveryFee: 0,
-    discountAmount: 0,
-    totalAmount: 6370000,
-    paymentMethod: 'M-Pesa',
-    paymentPhone: '+255 768 123 456',
-    transactionRef: 'QX881023.99',
-    status: 'In Transit',
-    assignedDriverName: 'Driver Bakari Kabyemela',
-    assignedDriverPhone: '+255 655 443 322',
-    assignedVehicle: 'T 412 DSK (Toyota Canter)',
-    createdAt: new Date().toLocaleString(),
-  },
-];
+export const initialOrders: Order[] = [];
 
-export const initialWarranties: Warranty[] = [
-  {
-    id: 'war-01',
-    serialNumber: 'JINKO-585W-2026-8812',
-    productName: 'Jinko Solar Monocrystalline N-Type 585W Panel',
-    customerName: 'Josephat Masawe',
-    customerPhone: '+255 768 123 456',
-    purchaseDate: '2026-01-15',
-    expiryDate: '2051-01-15',
-    status: 'Active',
-  },
-];
+export const initialWarranties: Warranty[] = [];

@@ -16,7 +16,7 @@ interface WarrantyState {
 export const useWarrantyStore = create<WarrantyState>()(
   persist(
     (set) => ({
-      warranties: initialWarranties,
+      warranties: [],
       claims: [],
 
       registerWarranty: (warrantyData) => {

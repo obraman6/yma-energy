@@ -74,6 +74,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   const featuredProducts = products.slice(0, 4);
   const pinnedReviews = reviews.filter((r) => r.isPinned);
+  const displayReviews = pinnedReviews.length > 0 ? pinnedReviews : reviews;
 
   return (
     <div className="space-y-4 sm:space-y-5 pb-8">
@@ -270,12 +271,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {pinnedReviews.length === 0 ? (
+          {displayReviews.length === 0 ? (
             <div className="col-span-full py-4 text-center text-xs text-slate-400 italic">
               Hakuna maoni bado. (No reviews yet)
             </div>
           ) : (
-            pinnedReviews.map((rev) => {
+            displayReviews.map((rev) => {
             const isExpanded = !!expandedReviews[rev.id];
             const isLong = rev.comment.length > 80;
             const displayComment = !isExpanded && isLong ? `${rev.comment.slice(0, 80)}...` : rev.comment;
