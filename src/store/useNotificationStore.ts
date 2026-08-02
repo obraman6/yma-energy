@@ -121,7 +121,7 @@ export const useNotificationStore = create<NotificationState>()(
         });
 
         try {
-          await setDoc(doc(db, 'notifications', id), newNotif);
+          await setDoc(doc(db, 'notifications', id), JSON.parse(JSON.stringify(newNotif)));
         } catch (err) {
           console.error('Error saving notification to Firebase:', err);
         }

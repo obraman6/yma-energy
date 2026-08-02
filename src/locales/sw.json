@@ -253,5 +253,17 @@
   "back": "Rudi",
   "loading": "Inapakia...",
   "success": "Imefanikiwa",
-  "error": "Hitilafu"
+  "error": "Hitilafu",
+
+  "noReviewsYet": "Hakuna maoni bado kutoka kwa wateja.",
+  "noProductsAvailable": "Hakuna bidhaa kwa sasa kwenye duka.",
+  "noServicesAvailable": "Hakuna huduma zilizowekwa kwa sasa.",
+  "accessDeniedBadge": "Hukuruhusiwi",
+  "accessDeniedTitle": "Eneo Hili Ni Kwa Ajili Ya Utawala Tu!",
+  "accessDeniedLoggedInCustomer": "Umeingia kama Mteja ({email}). Akaunti za wateja haziruhusiwi kufungua Mfumo wa Utawala.",
+  "accessDeniedLoggedOut": "Unatakiwa kuingia kama Administrator au Manager wa YMA Energy ili kuona ukurasa huu.",
+  "securityNoticeTitle": "Usalama wa Mfumo wa Enterprise",
+  "securityNoticeDesc": "Akaunti za Manager na Admin zinalindwa moja kwa moja na ngazi za usalama za Firebase Firestore.",
+  "returnHomeBtn": "Rudi Duka la Wateja",
+  "loginAsAdminBtn": "Ingia Kama Admin Manager"
 }

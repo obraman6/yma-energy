@@ -125,10 +125,11 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       createdAt: new Date().toISOString().split('T')[0],
     };
 
+    const cleanReq = JSON.parse(JSON.stringify(newReq));
     set((state) => ({ serviceRequests: [newReq, ...state.serviceRequests] }));
 
     try {
-      await setDoc(doc(db, 'serviceRequests', id), newReq);
+      await setDoc(doc(db, 'serviceRequests', id), cleanReq);
     } catch (err) {
       console.error('Error creating service request in Firebase:', err);
     }

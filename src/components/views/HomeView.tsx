@@ -170,7 +170,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           ) : featuredProducts.length === 0 ? (
             <div className="col-span-full py-8 text-center text-xs text-slate-500 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-              Hakuna bidhaa kwa sasa kwenye duka. (No products available)
+              {t('noProductsAvailable', 'No products available at this time.')}
             </div>
           ) : (
             featuredProducts.map((prod) => {
@@ -273,7 +273,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {displayReviews.length === 0 ? (
             <div className="col-span-full py-4 text-center text-xs text-slate-400 italic">
-              Hakuna maoni bado. (No reviews yet)
+              {t('noReviewsYet', 'No customer reviews yet.')}
             </div>
           ) : (
             displayReviews.map((rev) => {

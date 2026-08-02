@@ -114,7 +114,7 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
       description,
       priority,
       hasPhoto: !!photoUrl,
-      photoUrl: photoUrl || undefined,
+      photoUrl: photoUrl || '',
     });
 
     setSubmittedTicketRef(ticket.requestNumber);

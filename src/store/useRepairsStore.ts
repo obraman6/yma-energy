@@ -54,10 +54,12 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
       createdAt: new Date().toLocaleString(),
     };
 
+    const cleanTicket = JSON.parse(JSON.stringify(newTicket));
+
     set((state) => ({ repairRequests: [newTicket, ...state.repairRequests] }));
 
     try {
-      await setDoc(doc(db, 'repairs', id), newTicket);
+      await setDoc(doc(db, 'repairs', id), cleanTicket);
     } catch (err) {
       console.error('Error creating repair ticket in Firebase:', err);
     }

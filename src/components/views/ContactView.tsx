@@ -48,7 +48,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ openBranchMapModal }) 
         source: 'Contact Page',
       };
 
-      await setDoc(doc(db, 'inquiries', inquiryId), newInquiry);
+      await setDoc(doc(db, 'inquiries', inquiryId), JSON.parse(JSON.stringify(newInquiry)));
       sendAdminEmailTrigger({
         type: 'inquiry',
         data: newInquiry,

@@ -101,7 +101,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set((state) => ({ products: [newProduct, ...state.products] }));
 
     try {
-      await setDoc(doc(db, 'products', id), newProduct);
+      await setDoc(doc(db, 'products', id), JSON.parse(JSON.stringify(newProduct)));
 
       // Trigger system notification to all users via Firestore notification channel
       useNotificationStore.getState().addNotification({
@@ -242,7 +242,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set((state) => ({ reviews: [newReview, ...state.reviews] }));
 
     try {
-      await setDoc(doc(db, 'reviews', id), newReview);
+      await setDoc(doc(db, 'reviews', id), JSON.parse(JSON.stringify(newReview)));
     } catch (err) {
       console.error('Error saving review to Firebase:', err);
     }

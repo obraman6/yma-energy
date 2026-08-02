@@ -65,10 +65,11 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
       createdAt: new Date().toLocaleString(),
     };
 
+    const cleanOrder = JSON.parse(JSON.stringify(newOrder));
     set((state) => ({ orders: [newOrder, ...(state.orders || []).filter((o) => o.id !== id)] }));
 
     try {
-      await setDoc(doc(db, 'orders', id), newOrder);
+      await setDoc(doc(db, 'orders', id), cleanOrder);
     } catch (err) {
       console.error('Error saving order to Firebase:', err);
     }

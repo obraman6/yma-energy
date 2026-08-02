@@ -253,5 +253,17 @@
   "back": "Back",
   "loading": "Loading...",
   "success": "Success",
-  "error": "Error"
+  "error": "Error",
+
+  "noReviewsYet": "No customer reviews yet.",
+  "noProductsAvailable": "No products available at this time.",
+  "noServicesAvailable": "No services available at this time.",
+  "accessDeniedBadge": "Access Denied",
+  "accessDeniedTitle": "Admin Access Required",
+  "accessDeniedLoggedInCustomer": "Signed in as Customer ({email}). Customer accounts cannot access the Manager Console.",
+  "accessDeniedLoggedOut": "Please sign in with an Administrator or Manager account to access this page.",
+  "securityNoticeTitle": "Enterprise Security Rules",
+  "securityNoticeDesc": "Manager and Admin accounts are managed securely via Firebase Firestore roles.",
+  "returnHomeBtn": "Return to Customer Shop",
+  "loginAsAdminBtn": "Sign In as Admin Manager"
 }

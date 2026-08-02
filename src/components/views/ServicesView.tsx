@@ -66,7 +66,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({ onSelectService, ope
           </div>
         ) : services.length === 0 ? (
           <div className="col-span-full p-8 text-center text-xs text-slate-500 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-            Hakuna huduma zilizowekwa kwa sasa. (No services available)
+            {t('noServicesAvailable', 'No services available at this time.')}
           </div>
         ) : (
           services.map((service) => (
