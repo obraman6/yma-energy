@@ -37,7 +37,10 @@ import {
   Building2,
   MapPin,
   Edit3,
+  Share2,
+  Globe,
 } from 'lucide-react';
+import { SOCIAL_PLATFORMS, SOCIAL_MEDIA_CONFIG } from '../../config/socialLinks';
 import { db } from '../../lib/firebase';
 import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { useLanguage } from '../../context/LanguageContext';
@@ -100,6 +103,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [editingEmergencyPhone, setEditingEmergencyPhone] = useState('');
   const [editingWorkingHours, setEditingWorkingHours] = useState('');
   const [editingHqAddress, setEditingHqAddress] = useState('');
+  const [editingSocialLinks, setEditingSocialLinks] = useState<Record<string, string>>({
+    facebook: '',
+    instagram: '',
+    x: '',
+    linkedin: '',
+    youtube: '',
+    tiktok: '',
+    whatsapp: '',
+    telegram: '',
+    github: '',
+  });
   const [isSavingCompanySettings, setIsSavingCompanySettings] = useState(false);
 
   useEffect(() => {
@@ -109,6 +123,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setEditingEmergencyPhone(companySettings.emergencyPhone || '');
       setEditingWorkingHours(companySettings.workingHours || '');
       setEditingHqAddress(companySettings.hqAddress || '');
+      setEditingSocialLinks({
+        facebook: companySettings.socialLinks?.facebook ?? SOCIAL_MEDIA_CONFIG.facebook,
+        instagram: companySettings.socialLinks?.instagram ?? SOCIAL_MEDIA_CONFIG.instagram,
+        x: companySettings.socialLinks?.x ?? SOCIAL_MEDIA_CONFIG.x,
+        linkedin: companySettings.socialLinks?.linkedin ?? SOCIAL_MEDIA_CONFIG.linkedin,
+        youtube: companySettings.socialLinks?.youtube ?? SOCIAL_MEDIA_CONFIG.youtube,
+        tiktok: companySettings.socialLinks?.tiktok ?? SOCIAL_MEDIA_CONFIG.tiktok,
+        whatsapp: companySettings.socialLinks?.whatsapp ?? SOCIAL_MEDIA_CONFIG.whatsapp,
+        telegram: companySettings.socialLinks?.telegram ?? SOCIAL_MEDIA_CONFIG.telegram,
+        github: companySettings.socialLinks?.github ?? SOCIAL_MEDIA_CONFIG.github,
+      });
     }
   }, [companySettings]);
 
@@ -122,10 +147,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         emergencyPhone: editingEmergencyPhone,
         workingHours: editingWorkingHours,
         hqAddress: editingHqAddress,
+        socialLinks: editingSocialLinks,
       });
       showToast({
-        title: 'Taarifa za Mawasiliano Zimehifadhiwa! 📞',
-        message: 'Namba ya simu na barua pepe za msaada zimesasishwa kote kwenye mfumo.',
+        title: 'Taarifa na Links Zimehifadhiwa! 🌐',
+        message: 'Taarifa za mawasiliano na viungo vya mitandao ya kijamii zimesasishwa kote kwenye mfumo.',
         type: 'success',
       });
     } catch (err) {
@@ -911,6 +937,73 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
               </div>
 
+              {/* Social Media Links Section */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <Share2 className="w-4 h-4 text-amber-500" />
+                      <span>Mitandao ya Kijamii (Social Media Links)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Hariri links za kurasa zenu za mitandao ya kijamii zinazoonekana kwenye footer. Acha tupu ili kuficha mtandao husika.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditingSocialLinks(SOCIAL_MEDIA_CONFIG)}
+                    className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                  >
+                    Weka Links za Mfano (Reset)
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {SOCIAL_PLATFORMS.map((platform) => (
+                    <div
+                      key={platform.id}
+                      className="space-y-1 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80"
+                    >
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <svg
+                            className="w-3.5 h-3.5 shrink-0"
+                            fill="currentColor"
+                            viewBox={platform.viewBox || '0 0 24 24'}
+                            style={{ color: platform.color }}
+                          >
+                            <path d={platform.path} />
+                          </svg>
+                          <span>{platform.name}</span>
+                        </label>
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                            editingSocialLinks[platform.id]
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                              : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                          }`}
+                        >
+                          {editingSocialLinks[platform.id] ? 'Ipo Hewani' : 'Imefichwa'}
+                        </span>
+                      </div>
+                      <input
+                        type="url"
+                        value={editingSocialLinks[platform.id] || ''}
+                        onChange={(e) =>
+                          setEditingSocialLinks((prev) => ({
+                            ...prev,
+                            [platform.id]: e.target.value,
+                          }))
+                        }
+                        placeholder={`https://${platform.id}.com/...`}
+                        className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
@@ -922,7 +1015,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   ) : (
                     <>
                       <Edit3 className="w-4 h-4" />
-                      <span>Hifadhi Taarifa za Mawasiliano ya Kampuni</span>
+                      <span>Hifadhi Taarifa na Links za Mitandao</span>
                     </>
                   )}
                 </button>

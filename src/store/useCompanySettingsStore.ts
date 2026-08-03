@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { SOCIAL_MEDIA_CONFIG } from '../config/socialLinks';
 
 export interface CompanySettings {
   companyName: string;
@@ -9,6 +10,7 @@ export interface CompanySettings {
   emergencyPhone: string;
   workingHours: string;
   hqAddress: string;
+  socialLinks?: Record<string, string>;
 }
 
 export const defaultCompanySettings: CompanySettings = {
@@ -18,6 +20,7 @@ export const defaultCompanySettings: CompanySettings = {
   emergencyPhone: '+255 754 000 111',
   workingHours: '24/7 Customer Support | Mon - Sat: 08:00 - 18:00',
   hqAddress: 'Mikocheni B, Sayansi / Kijitonyama, Dar es Salaam',
+  socialLinks: SOCIAL_MEDIA_CONFIG,
 };
 
 interface CompanySettingsState {
