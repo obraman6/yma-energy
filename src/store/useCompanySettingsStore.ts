@@ -29,8 +29,33 @@ interface CompanySettingsState {
   updateSettings: (newSettings: Partial<CompanySettings>) => Promise<void>;
 }
 
+const LOCAL_STORAGE_KEY = 'yma_company_settings_v2';
+
+const loadCompanySettingsFromLocal = (): CompanySettings => {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === 'object') {
+        return { ...defaultCompanySettings, ...parsed };
+      }
+    }
+  } catch (e) {
+    console.error('Error loading company settings from localStorage:', e);
+  }
+  return defaultCompanySettings;
+};
+
+const saveCompanySettingsToLocal = (settings: CompanySettings) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(settings));
+  } catch (e) {
+    console.error('Error saving company settings to localStorage:', e);
+  }
+};
+
 export const useCompanySettingsStore = create<CompanySettingsState>((set, get) => ({
-  settings: defaultCompanySettings,
+  settings: loadCompanySettingsFromLocal(),
   isSynced: false,
   isLoading: true,
 
@@ -44,13 +69,17 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data() as CompanySettings;
-          set({ settings: { ...defaultCompanySettings, ...data }, isLoading: false });
+          const merged = { ...defaultCompanySettings, ...data };
+          saveCompanySettingsToLocal(merged);
+          set({ settings: merged, isLoading: false });
         } else {
-          // Initialize in firestore if not existing
-          setDoc(settingsDocRef, defaultCompanySettings).catch((err) =>
+          // Initialize in firestore with local settings
+          const currentLocal = get().settings;
+          setDoc(settingsDocRef, currentLocal).catch((err) =>
             console.error('Error seeding company settings:', err)
           );
-          set({ settings: defaultCompanySettings, isLoading: false });
+          saveCompanySettingsToLocal(currentLocal);
+          set({ isLoading: false });
         }
       },
       (err) => {
@@ -62,6 +91,7 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
 
   updateSettings: async (newSettings) => {
     const updated = { ...get().settings, ...newSettings };
+    saveCompanySettingsToLocal(updated);
     set({ settings: updated });
 
     try {
@@ -72,3 +102,6 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
     }
   },
 }));
+
+// Auto-initialize Firebase sync
+useCompanySettingsStore.getState().initFirebaseSync();

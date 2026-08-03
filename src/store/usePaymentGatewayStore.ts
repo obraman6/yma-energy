@@ -33,6 +33,8 @@ interface PaymentGatewayState {
   deleteGateway: (id: string) => Promise<void>;
 }
 
+const LOCAL_STORAGE_KEY = 'yma_payment_gateways_v2';
+
 const initialGateways: PaymentGateway[] = [
   {
     id: 'gw-mpesa',
@@ -104,8 +106,31 @@ const initialGateways: PaymentGateway[] = [
   },
 ];
 
+const loadGatewaysFromLocal = (): PaymentGateway[] => {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error loading payment gateways from localStorage:', e);
+  }
+  return initialGateways;
+};
+
+const saveGatewaysToLocal = (gateways: PaymentGateway[]) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(gateways));
+  } catch (e) {
+    console.error('Error saving payment gateways to localStorage:', e);
+  }
+};
+
 export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => ({
-  gateways: initialGateways,
+  gateways: loadGatewaysFromLocal(),
   isFirebaseSynced: false,
   isLoading: true,
 
@@ -125,16 +150,19 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
               id: data.id || d.id,
             } as PaymentGateway;
           });
+          saveGatewaysToLocal(remoteGateways);
           set({ gateways: remoteGateways, isLoading: false });
         } else {
-          // Seed initial gateways to Firestore
-          initialGateways.forEach((gw) => {
+          // Seed local/initial gateways to Firestore
+          const currentLocal = get().gateways;
+          currentLocal.forEach((gw) => {
             const cleanDoc = JSON.parse(JSON.stringify(gw));
             setDoc(doc(db, 'paymentGateways', gw.id), cleanDoc, { merge: true }).catch((e) =>
               console.error('Seeding payment gateway error:', e)
             );
           });
-          set({ gateways: initialGateways, isLoading: false });
+          saveGatewaysToLocal(currentLocal);
+          set({ isLoading: false });
         }
       },
       (err) => {
@@ -151,11 +179,12 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
       id: newId,
       isActive: gatewayData.isActive ?? true,
     };
-    const cleanDoc = JSON.parse(JSON.stringify(newGateway));
-
-    set((state) => ({ gateways: [...state.gateways, newGateway] }));
+    const updatedGateways = [...get().gateways, newGateway];
+    saveGatewaysToLocal(updatedGateways);
+    set({ gateways: updatedGateways });
 
     try {
+      const cleanDoc = JSON.parse(JSON.stringify(newGateway));
       await setDoc(doc(db, 'paymentGateways', newId), cleanDoc, { merge: true });
     } catch (err) {
       console.error('Error adding payment gateway to Firebase:', err);
@@ -171,13 +200,13 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
       ...updated,
       id,
     };
-    const cleanDoc = JSON.parse(JSON.stringify(merged));
 
-    set((state) => ({
-      gateways: state.gateways.map((g) => (g.id === id ? merged : g)),
-    }));
+    const updatedGateways = get().gateways.map((g) => (g.id === id ? merged : g));
+    saveGatewaysToLocal(updatedGateways);
+    set({ gateways: updatedGateways });
 
     try {
+      const cleanDoc = JSON.parse(JSON.stringify(merged));
       await setDoc(doc(db, 'paymentGateways', id), cleanDoc, { merge: true });
     } catch (err) {
       console.error('Error updating payment gateway in Firebase:', err);
@@ -193,13 +222,13 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
       ...currentGw,
       isActive: newActive,
     };
-    const cleanDoc = JSON.parse(JSON.stringify(merged));
 
-    set((state) => ({
-      gateways: state.gateways.map((g) => (g.id === id ? merged : g)),
-    }));
+    const updatedGateways = get().gateways.map((g) => (g.id === id ? merged : g));
+    saveGatewaysToLocal(updatedGateways);
+    set({ gateways: updatedGateways });
 
     try {
+      const cleanDoc = JSON.parse(JSON.stringify(merged));
       await setDoc(doc(db, 'paymentGateways', id), cleanDoc, { merge: true });
     } catch (err) {
       console.error('Error toggling payment gateway in Firebase:', err);
@@ -207,9 +236,9 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
   },
 
   deleteGateway: async (id) => {
-    set((state) => ({
-      gateways: state.gateways.filter((g) => g.id !== id),
-    }));
+    const updatedGateways = get().gateways.filter((g) => g.id !== id);
+    saveGatewaysToLocal(updatedGateways);
+    set({ gateways: updatedGateways });
 
     try {
       await deleteDoc(doc(db, 'paymentGateways', id));
@@ -218,3 +247,6 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
     }
   },
 }));
+
+// Auto-initialize Firebase sync
+usePaymentGatewayStore.getState().initFirebaseSync();

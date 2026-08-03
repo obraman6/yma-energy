@@ -21,8 +21,33 @@ interface BranchState {
   deleteBranch: (id: string) => Promise<void>;
 }
 
+const LOCAL_STORAGE_KEY = 'yma_branches_v2';
+
+const loadBranchesFromLocal = (): Branch[] => {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Error loading branches from localStorage:', e);
+  }
+  return initialBranches;
+};
+
+const saveBranchesToLocal = (branches: Branch[]) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(branches));
+  } catch (e) {
+    console.error('Error saving branches to localStorage:', e);
+  }
+};
+
 export const useBranchStore = create<BranchState>((set, get) => ({
-  branches: initialBranches,
+  branches: loadBranchesFromLocal(),
   isFirebaseSynced: false,
   isLoading: true,
 
@@ -42,16 +67,19 @@ export const useBranchStore = create<BranchState>((set, get) => ({
               id: data.id || d.id,
             } as Branch;
           });
+          saveBranchesToLocal(remoteBranches);
           set({ branches: remoteBranches, isLoading: false });
         } else {
-          // Seed initial branches to Firestore so they have document IDs and can be deleted/updated
-          initialBranches.forEach((b) => {
+          // Seed initial branches to Firestore
+          const currentLocal = get().branches;
+          currentLocal.forEach((b) => {
             const cleanDoc = JSON.parse(JSON.stringify(b));
             setDoc(doc(db, 'branches', b.id), cleanDoc, { merge: true }).catch((e) =>
               console.error('Seeding branch error:', e)
             );
           });
-          set({ branches: initialBranches, isLoading: false });
+          saveBranchesToLocal(currentLocal);
+          set({ isLoading: false });
         }
       },
       (err) => {
@@ -72,11 +100,13 @@ export const useBranchStore = create<BranchState>((set, get) => ({
       longitude: branchData.longitude ?? branchData.lng ?? 39.231,
       isHeadquarters: branchData.isHeadquarters || false,
     };
-    const cleanDoc = JSON.parse(JSON.stringify(newBranch));
 
-    set((state) => ({ branches: [...state.branches, newBranch] }));
+    const updated = [...get().branches, newBranch];
+    saveBranchesToLocal(updated);
+    set({ branches: updated });
 
     try {
+      const cleanDoc = JSON.parse(JSON.stringify(newBranch));
       await setDoc(doc(db, 'branches', newId), cleanDoc, { merge: true });
     } catch (err) {
       console.error('Error adding branch to Firebase:', err);
@@ -85,20 +115,20 @@ export const useBranchStore = create<BranchState>((set, get) => ({
     return newBranch;
   },
 
-  updateBranch: async (id, updated) => {
+  updateBranch: async (id, updatedData) => {
     const currentBranch = get().branches.find((b) => b.id === id);
     const fullMerged: Branch = {
       ...(currentBranch || ({ id } as Branch)),
-      ...updated,
+      ...updatedData,
       id,
     };
-    const cleanDoc = JSON.parse(JSON.stringify(fullMerged));
 
-    set((state) => ({
-      branches: state.branches.map((b) => (b.id === id ? fullMerged : b)),
-    }));
+    const updatedBranches = get().branches.map((b) => (b.id === id ? fullMerged : b));
+    saveBranchesToLocal(updatedBranches);
+    set({ branches: updatedBranches });
 
     try {
+      const cleanDoc = JSON.parse(JSON.stringify(fullMerged));
       await setDoc(doc(db, 'branches', id), cleanDoc, { merge: true });
     } catch (err) {
       console.error('Error updating branch in Firebase:', err);
@@ -106,9 +136,9 @@ export const useBranchStore = create<BranchState>((set, get) => ({
   },
 
   deleteBranch: async (id) => {
-    set((state) => ({
-      branches: state.branches.filter((b) => b.id !== id),
-    }));
+    const updatedBranches = get().branches.filter((b) => b.id !== id);
+    saveBranchesToLocal(updatedBranches);
+    set({ branches: updatedBranches });
 
     try {
       await deleteDoc(doc(db, 'branches', id));
@@ -117,4 +147,7 @@ export const useBranchStore = create<BranchState>((set, get) => ({
     }
   },
 }));
+
+// Auto-initialize Firebase sync
+useBranchStore.getState().initFirebaseSync();
 
