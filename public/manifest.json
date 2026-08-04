@@ -1,0 +1,69 @@
+{
+  "id": "/",
+  "name": "YMA ENERGY GROUP",
+  "short_name": "YMA Energy",
+  "description": "Duka la Vifaa vya Solar, Umeme na Huduma za Ufungaji (Solar Energy & Electrical Systems Tanzania)",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "lang": "sw",
+  "dir": "ltr",
+  "categories": ["shopping", "business", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "640x1136",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "YMA Energy Mobile Shopping & Field Service"
+    },
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "YMA Energy Control Console & Management"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Duka la Solar",
+      "short_name": "Duka",
+      "description": "Tazama na ununue vifaa vya Solar",
+      "url": "/?shortcut=shop",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Omba Service",
+      "short_name": "Service",
+      "description": "Omba mafundi na kupata nukuu ya mfumo",
+      "url": "/?shortcut=service",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
