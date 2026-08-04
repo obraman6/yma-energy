@@ -147,7 +147,7 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
             const data = d.data();
             return {
               ...data,
-              id: data.id || d.id,
+              id: d.id,
             } as PaymentGateway;
           });
           saveGatewaysToLocal(remoteGateways);

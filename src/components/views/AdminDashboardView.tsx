@@ -387,15 +387,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   return (
     <div className="space-y-6 pb-20">
       {/* Top Header & Navigation Bar */}
-      <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-slate-800">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black">
-            <Cpu className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-xl sm:rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black shrink-0">
+            <Cpu className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black">YMA Energy Control Console</h1>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-base sm:text-lg font-black truncate">YMA Energy Control Console</h1>
+              <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider shrink-0 ${
                 isSuperAdmin
                   ? 'bg-amber-500 text-white'
                   : isStaffAdmin
@@ -405,97 +405,150 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 {isSuperAdmin ? 'SUPER ADMIN' : isStaffAdmin ? 'STAFF ADMIN' : 'OPERATIONS MANAGER'}
               </span>
             </div>
-            <p className="text-xs text-amber-400 font-mono">
-              Role: {currentUser?.role || 'ADMIN'} • Logged in as {currentUser?.name || currentUser?.email}
+            <p className="text-[11px] sm:text-xs text-amber-400 font-mono truncate mt-0.5">
+              Role: {currentUser?.role || 'ADMIN'} • {currentUser?.name || currentUser?.email}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={onOpenReportModal}
-            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+            className="flex-1 sm:flex-none px-3.5 py-2 sm:py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-colors"
           >
-            <FileText className="w-4 h-4" />
-            <span>Export PDF Report</span>
+            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Export Report</span>
           </button>
 
           <button
             onClick={onBackToCustomerView}
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1.5 border border-white/20"
+            className="flex-1 sm:flex-none px-3.5 py-2 sm:py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center justify-center gap-1.5 border border-white/20 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Customer Store View</span>
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Customer Store</span>
           </button>
         </div>
       </div>
 
       {/* Analytics Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1 shadow-sm">
-          <span className="text-[10px] font-bold uppercase text-slate-400 block">Total Revenue</span>
-          <p className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-500 font-mono">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1 shadow-sm min-w-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-400 block truncate">Total Revenue</span>
+          <p className="text-sm sm:text-lg font-black text-amber-600 dark:text-amber-500 font-mono truncate">
             TZS {totalRevenue.toLocaleString()}
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1 shadow-sm">
-          <span className="text-[10px] font-bold uppercase text-slate-400 block">Orders Processed</span>
-          <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-mono">
+        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1 shadow-sm min-w-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-400 block truncate">Orders Processed</span>
+          <p className="text-sm sm:text-lg font-black text-slate-900 dark:text-white font-mono truncate">
             {totalOrders} Orders
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1 shadow-sm">
-          <span className="text-[10px] font-bold uppercase text-slate-400 block">Emergency Repairs</span>
-          <p className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 font-mono">
+        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1 shadow-sm min-w-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-400 block truncate">Emergency Repairs</span>
+          <p className="text-sm sm:text-lg font-black text-rose-600 dark:text-rose-400 font-mono truncate">
             {totalRepairs} Dispatches
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1 shadow-sm">
-          <span className="text-[10px] font-bold uppercase text-slate-400 block">Active Claims</span>
-          <p className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono">
+        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1 shadow-sm min-w-0">
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase text-slate-400 block truncate">Active Claims</span>
+          <p className="text-sm sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono truncate">
             {activeWarranties} Pending
           </p>
         </div>
       </div>
 
-      {/* Admin Sub-Tabs Header */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200 dark:border-slate-800">
-        {[
-          { id: 'inventory', label: 'Catalog & Inventory', icon: Package, show: true },
-          { id: 'orders', label: 'Orders & Logistics', icon: ShoppingBag, show: true },
-          { id: 'services', label: 'Services & Surveyors', icon: Wrench, show: true },
-          { id: 'branches', label: `🏢 Matawi & Maeneo (${branches.length})`, icon: Building2, show: true },
-          { id: 'inquiries', label: `Ujumbe wa Wateja (${inquiriesList.length})`, icon: MessageSquare, show: true },
-          { id: 'emails', label: `📧 Email Alerts (${emailAlertsList.length})`, icon: Mail, show: true },
-          { id: 'gateways', label: 'Payment Gateways', icon: CreditCard, show: true },
-          { id: 'users', label: 'Staff & Roles Control', icon: Users, show: isSuperAdmin || isStaffAdmin },
-          { id: 'repairs', label: 'Emergency Repairs', icon: ShieldAlert, show: true },
-          { id: 'warranty', label: 'Warranty Claims', icon: ShieldCheck, show: true },
-          { id: 'reviews', label: 'Customer Reviews', icon: Star, show: true },
-          { id: 'firebase', label: '🔥 Firebase Inspector (Live DB)', icon: Database, show: isSuperAdmin },
-        ]
-          .filter((t) => t.show)
-          .map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeAdminTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveAdminTab(tab.id as any)}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap flex items-center gap-2 transition-all ${
-                  isActive
-                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
-                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+      {/* Responsive Admin Control Grid Navigation */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Admin Navigation Modules
+          </h2>
+          <span className="text-[10px] sm:text-[11px] font-medium text-slate-400">
+            Select module
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
+          {[
+            { id: 'inventory', label: 'Inventory', subLabel: 'Catalog & Stock', icon: Package, count: products.length, show: true },
+            { id: 'orders', label: 'Orders & Logistics', subLabel: 'Track & Process', icon: ShoppingBag, count: orders.length, show: true },
+            { id: 'services', label: 'Services & Surveyors', subLabel: 'Installations & Audits', icon: Wrench, count: serviceRequests.length, show: true },
+            { id: 'branches', label: 'Branches & Locations', subLabel: 'Matawi & Maeneo', icon: Building2, count: branches.length, show: true },
+            { id: 'inquiries', label: 'Customer Messages', subLabel: 'Ujumbe wa Wateja', icon: MessageSquare, count: inquiriesList.length, show: true },
+            { id: 'emails', label: 'Email Alerts', subLabel: 'Notifications Log', icon: Mail, count: emailAlertsList.length, show: true },
+            { id: 'gateways', label: 'Payment Gateways', subLabel: 'M-Pesa, Bank & Cards', icon: CreditCard, count: gateways.length, show: true },
+            { id: 'users', label: 'Staff & Roles Control', subLabel: 'Permissions & Team', icon: Users, count: safeUsers.length, show: isSuperAdmin || isStaffAdmin },
+            { id: 'repairs', label: 'Emergency Repairs', subLabel: 'Dharura & Matengenezo', icon: ShieldAlert, count: repairRequests.length, show: true },
+            { id: 'warranty', label: 'Warranty Claims', subLabel: 'Warranties & Refunds', icon: ShieldCheck, count: claims.length, show: true },
+            { id: 'reviews', label: 'Customer Reviews', subLabel: 'Ratings & Feedback', icon: Star, count: reviews.length, show: true },
+            { id: 'firebase', label: 'Firebase Inspector', subLabel: 'Live Database Sync', icon: Database, count: 'LIVE', show: isSuperAdmin },
+          ]
+            .filter((item) => item.show)
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive = activeAdminTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveAdminTab(item.id as any)}
+                  className={`group relative min-h-[72px] sm:h-[78px] rounded-[14px] p-2.5 sm:p-3 flex items-center justify-between transition-all duration-200 text-left select-none ${
+                    isActive
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 border border-amber-400/40 ring-2 ring-amber-500/30 -translate-y-0.5'
+                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 shadow-sm hover:border-amber-500/50 hover:shadow hover:-translate-y-0.5'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 pr-1.5">
+                    <div
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                        isActive
+                          ? 'bg-white/20 text-white shadow-inner'
+                          : 'bg-amber-500/10 text-amber-500 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-white group-hover:scale-105'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <span
+                        className={`block text-[11px] sm:text-xs md:text-sm font-extrabold truncate leading-tight ${
+                          isActive
+                            ? 'text-white'
+                            : 'text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400'
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      {item.subLabel && (
+                        <span
+                          className={`block text-[9px] sm:text-[10px] font-medium truncate mt-0.5 ${
+                            isActive ? 'text-amber-100' : 'text-slate-400 dark:text-slate-500'
+                          }`}
+                        >
+                          {item.subLabel}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {item.count !== undefined && item.count !== null && (
+                    <span
+                      className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black shrink-0 transition-colors ${
+                        isActive
+                          ? 'bg-white/25 text-white border border-white/30'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:bg-amber-500 group-hover:text-white'
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+        </div>
       </div>
 
       {/* SUB-TAB 1: CATALOG & INVENTORY */}
@@ -668,10 +721,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }
                         className="flex-1 p-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold"
                       >
-                        <option value="">-- Choose Driver --</option>
-                        <option value="Emanuel Driver">Emanuel (TVS Tricycle)</option>
-                        <option value="Joseph Driver">Joseph (Isuzu Truck)</option>
-                        <option value="Bakari Driver">Bakari (Box Van)</option>
+                        <option value="">-- Chagua Dereva au Mjumbe --</option>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.name}>
+                            {u.name} ({u.phone || u.email})
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -805,16 +860,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           <option value="fallback" disabled>Hakuna Mafundi (Ongeza kwenye Staff Control)</option>
                         )}
                       </select>
-
-                      <button
-                        onClick={() => {
-                          assignEngineer(sr.id, 'Eng. Joseph Kimaro', '+255754000111', 'tech-joseph', 'joseph@ymaenergy.com');
-                          showToast({ title: 'Mhandisi Joseph Amepangwa', message: 'Kazi imekatwa kwenda kwa Joseph.', type: 'success' });
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-xs hover:bg-slate-800"
-                      >
-                        Fast Dispatch: Eng. Joseph
-                      </button>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -1510,16 +1555,6 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <option value="fallback" disabled>Hakuna Mafundi waliopo</option>
                       )}
                     </select>
-
-                    <button
-                      onClick={() => {
-                        dispatchTechnician(rr.id, 'Tech. Sarah Mwanza', '+255754999888', 'tech-sarah', 'sarah@ymaenergy.com');
-                        showToast({ title: 'Fundi Sarah Amepangwa', message: 'Tiketi imekatwa kwenda kwa Sarah.', type: 'success' });
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-bold text-xs hover:bg-slate-800"
-                    >
-                      Fast Dispatch: Tech. Sarah
-                    </button>
                   </div>
 
                   <div className="flex items-center gap-2">

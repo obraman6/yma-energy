@@ -64,7 +64,7 @@ export const useBranchStore = create<BranchState>((set, get) => ({
             const data = d.data();
             return {
               ...data,
-              id: data.id || d.id,
+              id: d.id, // ALWAYS use d.id as the authoritative document ID
             } as Branch;
           });
           saveBranchesToLocal(remoteBranches);
