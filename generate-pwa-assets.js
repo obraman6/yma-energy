@@ -1,96 +1,110 @@
 import fs from 'fs';
 import path from 'path';
-import { PNG } from 'pngjs';
+import sharp from 'sharp';
 
-// Helper to draw filled rectangle
-function drawRect(png, x, y, w, h, r, g, b, a = 255) {
-  for (let py = Math.max(0, y); py < Math.min(png.height, y + h); py++) {
-    for (let px = Math.max(0, x); px < Math.min(png.width, x + w); px++) {
-      const idx = (png.width * py + px) << 2;
-      png.data[idx] = r;
-      png.data[idx + 1] = g;
-      png.data[idx + 2] = b;
-      png.data[idx + 3] = a;
+async function generateAssets() {
+  const svgBuffer = fs.readFileSync(path.join('public', 'logo.svg'));
+
+  // 1. Icon 192x192
+  await sharp(svgBuffer)
+    .resize(192, 192)
+    .png()
+    .toFile(path.join('public', 'icon-192.png'));
+  console.log('Created icon-192.png');
+
+  // 2. Icon 512x512
+  await sharp(svgBuffer)
+    .resize(512, 512)
+    .png()
+    .toFile(path.join('public', 'icon-512.png'));
+  console.log('Created icon-512.png');
+
+  // 3. Maskable Icon 512x512 (with padding & dark slate background)
+  const logoResized = await sharp(svgBuffer)
+    .resize(384, 384)
+    .toBuffer();
+
+  await sharp({
+    create: {
+      width: 512,
+      height: 512,
+      channels: 4,
+      background: { r: 15, g: 23, b: 42, alpha: 1 } // #0f172a
     }
-  }
+  })
+    .composite([{ input: logoResized, top: 64, left: 64 }])
+    .png()
+    .toFile(path.join('public', 'icon-maskable.png'));
+  console.log('Created icon-maskable.png');
+
+  // 4. Mobile Screenshot (640x1136)
+  const mobileLogo = await sharp(svgBuffer).resize(200, 200).toBuffer();
+  const mobileSvgOverlay = Buffer.from(`
+    <svg width="640" height="1136">
+      <rect width="640" height="1136" fill="#0f172a" />
+      <rect x="0" y="0" width="640" height="90" fill="#1e293b" />
+      <text x="320" y="55" font-family="sans-serif" font-weight="bold" font-size="26" fill="#ffffff" text-anchor="middle">YMA ENERGY GROUP</text>
+      <rect x="0" y="90" width="640" height="4" fill="#f59e0b" />
+      
+      <!-- Card 1 -->
+      <rect x="30" y="340" width="580" height="180" rx="20" fill="#1e293b" stroke="#334155" stroke-width="2" />
+      <text x="60" y="390" font-family="sans-serif" font-weight="bold" font-size="24" fill="#f59e0b">Duka la Solar &amp; Inverters</text>
+      <text x="60" y="430" font-family="sans-serif" font-size="18" fill="#94a3b8">Victron, Must, Felicity &amp; Lithium Batteries</text>
+
+      <!-- Card 2 -->
+      <rect x="30" y="550" width="580" height="180" rx="20" fill="#1e293b" stroke="#334155" stroke-width="2" />
+      <text x="60" y="600" font-family="sans-serif" font-weight="bold" font-size="24" fill="#38bdf8">Huduma za Mafundi &amp; Survey</text>
+      <text x="60" y="640" font-family="sans-serif" font-size="18" fill="#94a3b8">Ufungaji wa Mifumo ya Solar Tanzania Nzima</text>
+
+      <!-- Floating Action -->
+      <rect x="170" y="980" width="300" height="60" rx="30" fill="#f59e0b" />
+      <text x="320" y="1018" font-family="sans-serif" font-weight="bold" font-size="20" fill="#ffffff" text-anchor="middle">Wasiliana Nasi WhatsApp</text>
+    </svg>
+  `);
+
+  await sharp(mobileSvgOverlay)
+    .composite([{ input: mobileLogo, top: 110, left: 220 }])
+    .png()
+    .toFile(path.join('public', 'screenshot-mobile.png'));
+  console.log('Created screenshot-mobile.png');
+
+  // 5. Desktop Screenshot (1280x800)
+  const desktopLogo = await sharp(svgBuffer).resize(160, 160).toBuffer();
+  const desktopSvgOverlay = Buffer.from(`
+    <svg width="1280" height="800">
+      <rect width="1280" height="800" fill="#0f172a" />
+      <!-- Sidebar -->
+      <rect x="0" y="0" width="260" height="800" fill="#1e293b" />
+      <text x="130" y="220" font-family="sans-serif" font-weight="bold" font-size="20" fill="#ffffff" text-anchor="middle">YMA ENERGY</text>
+      
+      <!-- Top header -->
+      <rect x="260" y="0" width="1020" height="70" fill="#1e293b" />
+      <text x="290" y="45" font-family="sans-serif" font-weight="bold" font-size="22" fill="#ffffff">YMA Energy Control Console</text>
+
+      <!-- Stat Cards -->
+      <rect x="290" y="100" width="220" height="110" rx="16" fill="#1e293b" />
+      <text x="310" y="135" font-family="sans-serif" font-size="14" fill="#94a3b8">MAPATO</text>
+      <text x="310" y="175" font-family="sans-serif" font-weight="bold" font-size="22" fill="#f59e0b">TZS 48,500,000</text>
+
+      <rect x="530" y="100" width="220" height="110" rx="16" fill="#1e293b" />
+      <text x="550" y="135" font-family="sans-serif" font-size="14" fill="#94a3b8">ODAS</text>
+      <text x="550" y="175" font-family="sans-serif" font-weight="bold" font-size="22" fill="#ffffff">142 Odas</text>
+
+      <rect x="770" y="100" width="220" height="110" rx="16" fill="#1e293b" />
+      <text x="790" y="135" font-family="sans-serif" font-size="14" fill="#94a3b8">MAFUNDI</text>
+      <text x="790" y="175" font-family="sans-serif" font-weight="bold" font-size="22" fill="#38bdf8">18 Surveyors</text>
+
+      <!-- Main Content Area -->
+      <rect x="290" y="240" width="940" height="520" rx="20" fill="#1e293b" />
+      <text x="320" y="285" font-family="sans-serif" font-weight="bold" font-size="20" fill="#ffffff">Catalog &amp; Store Management</text>
+    </svg>
+  `);
+
+  await sharp(desktopSvgOverlay)
+    .composite([{ input: desktopLogo, top: 40, left: 50 }])
+    .png()
+    .toFile(path.join('public', 'screenshot-desktop.png'));
+  console.log('Created screenshot-desktop.png');
 }
 
-// Helper to draw a circle
-function drawCircle(png, cx, cy, radius, r, g, b, a = 255) {
-  const r2 = radius * radius;
-  for (let py = Math.max(0, cy - radius); py <= Math.min(png.height - 1, cy + radius); py++) {
-    for (let px = Math.max(0, cx - radius); px <= Math.min(png.width - 1, cx + radius); px++) {
-      const dx = px - cx;
-      const dy = py - cy;
-      if (dx * dx + dy * dy <= r2) {
-        const idx = (png.width * py + px) << 2;
-        png.data[idx] = r;
-        png.data[idx + 1] = g;
-        png.data[idx + 2] = b;
-        png.data[idx + 3] = a;
-      }
-    }
-  }
-}
-
-// Draw YMA Energy Sun logo
-function drawLogo(png, size, padding = 0) {
-  // Background gradient-like fill (Amber / Dark Slate)
-  const bgR = 15, bgG = 23, bgB = 42; // Dark slate #0f172a
-  drawRect(png, 0, 0, size, size, bgR, bgG, bgB, 255);
-
-  const center = size / 2;
-  const radius = (size / 2) - padding - Math.floor(size * 0.1);
-
-  // Outer glowing sun ring (Amber #f59e0b)
-  drawCircle(png, center, center, radius, 245, 158, 11, 255);
-
-  // Inner dark circle
-  drawCircle(png, center, center, Math.floor(radius * 0.75), bgR, bgG, bgB, 255);
-
-  // Center core sun (Orange #f97316)
-  drawCircle(png, center, center, Math.floor(radius * 0.45), 249, 115, 22, 255);
-
-  // Solar ray accents (horizontal & vertical bars)
-  const barW = Math.max(4, Math.floor(size * 0.08));
-  const barH = Math.floor(radius * 1.6);
-  drawRect(png, center - barW / 2, center - barH / 2, barW, barH, 245, 158, 11, 255);
-  drawRect(png, center - barH / 2, center - barW / 2, barH, barW, 245, 158, 11, 255);
-
-  // Center bright core
-  drawCircle(png, center, center, Math.floor(radius * 0.3), 255, 255, 255, 255);
-}
-
-function createIcon(size, filename, padding = 0) {
-  const png = new PNG({ width: size, height: size });
-  drawLogo(png, size, padding);
-  const buffer = PNG.sync.write(png);
-  fs.writeFileSync(path.join('public', filename), buffer);
-  console.log(`Generated public/${filename}`);
-}
-
-function createScreenshot(width, height, filename, title) {
-  const png = new PNG({ width, height });
-  // Background #0f172a
-  drawRect(png, 0, 0, width, height, 15, 23, 42, 255);
-  // Header bar #1e293b
-  drawRect(png, 0, 0, width, 60, 30, 41, 59, 255);
-  // Accent bar #f59e0b
-  drawRect(png, 0, 56, width, 4, 245, 158, 11, 255);
-  // Card 1
-  drawRect(png, 20, 80, width - 40, 140, 30, 41, 59, 255);
-  drawRect(png, 40, 100, 80, 80, 245, 158, 11, 255);
-  // Card 2
-  drawRect(png, 20, 240, width - 40, 140, 30, 41, 59, 255);
-  drawRect(png, 40, 260, 80, 80, 249, 115, 22, 255);
-
-  const buffer = PNG.sync.write(png);
-  fs.writeFileSync(path.join('public', filename), buffer);
-  console.log(`Generated public/${filename}`);
-}
-
-createIcon(192, 'icon-192.png');
-createIcon(512, 'icon-512.png');
-createIcon(512, 'icon-maskable.png', 40);
-createScreenshot(640, 1136, 'screenshot-mobile.png', 'YMA Energy Mobile');
-createScreenshot(1280, 800, 'screenshot-desktop.png', 'YMA Energy Desktop');
+generateAssets().catch(console.error);
