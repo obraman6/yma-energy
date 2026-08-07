@@ -461,31 +461,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Responsive Admin Control Grid Navigation */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Admin Navigation Modules
-          </h2>
-          <span className="text-[10px] sm:text-[11px] font-medium text-slate-400">
-            Select module
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
+      {/* Horizontal Tab Navigation Bar (Matching Image 1) */}
+      <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 px-1 no-scrollbar sm:flex-wrap">
           {[
-            { id: 'inventory', label: 'Inventory', subLabel: 'Catalog & Stock', icon: Package, count: products.length, show: true },
-            { id: 'orders', label: 'Orders & Logistics', subLabel: 'Track & Process', icon: ShoppingBag, count: orders.length, show: true },
-            { id: 'services', label: 'Services & Surveyors', subLabel: 'Installations & Audits', icon: Wrench, count: serviceRequests.length, show: true },
-            { id: 'branches', label: 'Branches & Locations', subLabel: 'Matawi & Maeneo', icon: Building2, count: branches.length, show: true },
-            { id: 'inquiries', label: 'Customer Messages', subLabel: 'Ujumbe wa Wateja', icon: MessageSquare, count: inquiriesList.length, show: true },
-            { id: 'emails', label: 'Email Alerts', subLabel: 'Notifications Log', icon: Mail, count: emailAlertsList.length, show: true },
-            { id: 'gateways', label: 'Payment Gateways', subLabel: 'M-Pesa, Bank & Cards', icon: CreditCard, count: gateways.length, show: true },
-            { id: 'users', label: 'Staff & Roles Control', subLabel: 'Permissions & Team', icon: Users, count: safeUsers.length, show: isSuperAdmin || isStaffAdmin },
-            { id: 'repairs', label: 'Emergency Repairs', subLabel: 'Dharura & Matengenezo', icon: ShieldAlert, count: repairRequests.length, show: true },
-            { id: 'warranty', label: 'Warranty Claims', subLabel: 'Warranties & Refunds', icon: ShieldCheck, count: claims.length, show: true },
-            { id: 'reviews', label: 'Customer Reviews', subLabel: 'Ratings & Feedback', icon: Star, count: reviews.length, show: true },
-            { id: 'firebase', label: 'Firebase Inspector', subLabel: 'Live Database Sync', icon: Database, count: 'LIVE', show: isSuperAdmin },
+            { id: 'inventory', label: 'Catalog & Inventory', icon: Package, count: products.length, show: true },
+            { id: 'orders', label: 'Orders & Logistics', icon: ShoppingBag, count: orders.length, show: true },
+            { id: 'services', label: 'Services & Surveyors', icon: Wrench, count: serviceRequests.length, show: true },
+            { id: 'branches', label: '🏢 Matawi & Maeneo', icon: Building2, count: branches.length, show: true },
+            { id: 'inquiries', label: 'Ujumbe wa Wateja', icon: MessageSquare, count: inquiriesList.length, show: true },
+            { id: 'emails', label: '📧 Email Alerts', icon: Mail, count: emailAlertsList.length, show: true },
+            { id: 'gateways', label: 'Payment Gateways', icon: CreditCard, count: gateways.length, show: true },
+            { id: 'users', label: 'Staff & Roles Control', icon: Users, count: safeUsers.length, show: isSuperAdmin || isStaffAdmin },
+            { id: 'repairs', label: 'Emergency Repairs', icon: ShieldAlert, count: repairRequests.length, show: true },
+            { id: 'warranty', label: 'Warranty Claims', icon: ShieldCheck, count: claims.length, show: true },
+            { id: 'reviews', label: 'Customer Reviews', icon: Star, count: reviews.length, show: true },
+            { id: 'firebase', label: 'Firebase Inspector', icon: Database, count: 'LIVE', show: isSuperAdmin },
           ]
             .filter((item) => item.show)
             .map((item) => {
@@ -495,51 +486,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 <button
                   key={item.id}
                   onClick={() => setActiveAdminTab(item.id as any)}
-                  className={`group relative min-h-[72px] sm:h-[78px] rounded-[14px] p-2.5 sm:p-3 flex items-center justify-between transition-all duration-200 text-left select-none ${
+                  className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 whitespace-nowrap transition-all duration-150 shrink-0 ${
                     isActive
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25 border border-amber-400/40 ring-2 ring-amber-500/30 -translate-y-0.5'
-                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 shadow-sm hover:border-amber-500/50 hover:shadow hover:-translate-y-0.5'
+                      ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-2 ring-amber-500/30'
+                      : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 pr-1.5">
-                    <div
-                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
-                        isActive
-                          ? 'bg-white/20 text-white shadow-inner'
-                          : 'bg-amber-500/10 text-amber-500 dark:text-amber-400 group-hover:bg-amber-500 group-hover:text-white group-hover:scale-105'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                    </div>
-
-                    <div className="min-w-0">
-                      <span
-                        className={`block text-[11px] sm:text-xs md:text-sm font-extrabold truncate leading-tight ${
-                          isActive
-                            ? 'text-white'
-                            : 'text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400'
-                        }`}
-                      >
-                        {item.label}
-                      </span>
-                      {item.subLabel && (
-                        <span
-                          className={`block text-[9px] sm:text-[10px] font-medium truncate mt-0.5 ${
-                            isActive ? 'text-amber-100' : 'text-slate-400 dark:text-slate-500'
-                          }`}
-                        >
-                          {item.subLabel}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
                   {item.count !== undefined && item.count !== null && (
                     <span
-                      className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black shrink-0 transition-colors ${
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 transition-colors ${
                         isActive
-                          ? 'bg-white/25 text-white border border-white/30'
-                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:bg-amber-500 group-hover:text-white'
+                          ? 'bg-white/20 text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                       }`}
                     >
                       {item.count}

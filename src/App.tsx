@@ -45,6 +45,7 @@ import { useAuthStore } from './store/useAuthStore';
 function MainAppContent() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
+  const [isStandaloneApp, setIsStandaloneApp] = useState<boolean>(false);
   const { language } = useLanguage();
 
   useEffect(() => {
@@ -52,6 +53,27 @@ function MainAppContent() {
       setIsAppLoading(false);
     }, 3000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const checkStandalone = () => {
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true ||
+        document.referrer.includes('android-app://');
+      setIsStandaloneApp(isStandalone);
+    };
+    checkStandalone();
+
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleChange = (e: MediaQueryListEvent) => setIsStandaloneApp(e.matches);
+    try {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    } catch {
+      mediaQuery.addListener(handleChange);
+      return () => mediaQuery.removeListener(handleChange);
+    }
   }, []);
 
   // Modal visibility states
@@ -255,8 +277,12 @@ function MainAppContent() {
               ))}
           </main>
 
-          {/* Full-width Responsive Footer */}
-          <Footer setActiveTab={setActiveTab} />
+          {/* Full-width Responsive Footer: Visible on website across pages, but in standalone App mode only visible on Contact Us */}
+          {(!isStandaloneApp || activeTab === 'contact') &&
+            activeTab !== 'admin' &&
+            activeTab !== 'technician' && (
+              <Footer setActiveTab={setActiveTab} />
+          )}
 
           {/* Bottom Navigation for Mobile & Tablet */}
           <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
