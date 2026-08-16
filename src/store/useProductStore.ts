@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Product, ProductCategory, CustomerReview } from '../types';
+import { initialProducts, initialReviews } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { useNotificationStore } from './useNotificationStore';
 import {
@@ -40,7 +41,7 @@ interface ProductState {
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
-  products: [],
+  products: initialProducts,
   reviews: [],
   selectedCategory: 'All',
   searchQuery: '',

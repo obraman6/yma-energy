@@ -469,8 +469,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             { id: 'orders', label: 'Orders & Logistics', icon: ShoppingBag, count: orders.length, show: true },
             { id: 'services', label: 'Services & Surveyors', icon: Wrench, count: serviceRequests.length, show: true },
             { id: 'branches', label: '🏢 Matawi & Maeneo', icon: Building2, count: branches.length, show: true },
-            { id: 'inquiries', label: 'Ujumbe wa Wateja', icon: MessageSquare, count: inquiriesList.length, show: true },
-            { id: 'emails', label: '📧 Email Alerts', icon: Mail, count: emailAlertsList.length, show: true },
+            { id: 'inquiries', label: 'Ujumbe wa Wateja', icon: MessageSquare, count: inquiriesList.length, highlight: true, show: true },
+            { id: 'emails', label: '📧 Email Alerts', icon: Mail, count: emailAlertsList.length, highlight: true, show: true },
             { id: 'gateways', label: 'Payment Gateways', icon: CreditCard, count: gateways.length, show: true },
             { id: 'users', label: 'Staff & Roles Control', icon: Users, count: safeUsers.length, show: isSuperAdmin || isStaffAdmin },
             { id: 'repairs', label: 'Emergency Repairs', icon: ShieldAlert, count: repairRequests.length, show: true },
@@ -499,6 +499,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 transition-colors ${
                         isActive
                           ? 'bg-white/20 text-white'
+                          : item.highlight
+                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-black'
                           : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                       }`}
                     >

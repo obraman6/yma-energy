@@ -21,33 +21,8 @@ interface BranchState {
   deleteBranch: (id: string) => Promise<void>;
 }
 
-const LOCAL_STORAGE_KEY = 'yma_branches_v2';
-
-const loadBranchesFromLocal = (): Branch[] => {
-  try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.error('Error loading branches from localStorage:', e);
-  }
-  return [];
-};
-
-const saveBranchesToLocal = (branches: Branch[]) => {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(branches));
-  } catch (e) {
-    console.error('Error saving branches to localStorage:', e);
-  }
-};
-
 export const useBranchStore = create<BranchState>((set, get) => ({
-  branches: loadBranchesFromLocal(),
+  branches: [],
   isFirebaseSynced: false,
   isLoading: true,
 
@@ -67,11 +42,8 @@ export const useBranchStore = create<BranchState>((set, get) => ({
               id: d.id, // ALWAYS use d.id as the authoritative document ID
             } as Branch;
           });
-          saveBranchesToLocal(remoteBranches);
           set({ branches: remoteBranches, isLoading: false });
         } else {
-          // No remote branches found. Start with empty local branches.
-          saveBranchesToLocal([]);
           set({ branches: [], isLoading: false });
         }
       },
@@ -95,7 +67,6 @@ export const useBranchStore = create<BranchState>((set, get) => ({
     };
 
     const updated = [...get().branches, newBranch];
-    saveBranchesToLocal(updated);
     set({ branches: updated });
 
     try {
@@ -117,7 +88,6 @@ export const useBranchStore = create<BranchState>((set, get) => ({
     };
 
     const updatedBranches = get().branches.map((b) => (b.id === id ? fullMerged : b));
-    saveBranchesToLocal(updatedBranches);
     set({ branches: updatedBranches });
 
     try {
@@ -130,7 +100,6 @@ export const useBranchStore = create<BranchState>((set, get) => ({
 
   deleteBranch: async (id) => {
     const updatedBranches = get().branches.filter((b) => b.id !== id);
-    saveBranchesToLocal(updatedBranches);
     set({ branches: updatedBranches });
 
     try {

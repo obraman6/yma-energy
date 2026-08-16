@@ -33,35 +33,8 @@ interface PaymentGatewayState {
   deleteGateway: (id: string) => Promise<void>;
 }
 
-const LOCAL_STORAGE_KEY = 'yma_payment_gateways_v2';
-
-const initialGateways: PaymentGateway[] = [];
-
-const loadGatewaysFromLocal = (): PaymentGateway[] => {
-  try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.error('Error loading payment gateways from localStorage:', e);
-  }
-  return [];
-};
-
-const saveGatewaysToLocal = (gateways: PaymentGateway[]) => {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(gateways));
-  } catch (e) {
-    console.error('Error saving payment gateways to localStorage:', e);
-  }
-};
-
 export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => ({
-  gateways: loadGatewaysFromLocal(),
+  gateways: [],
   isFirebaseSynced: false,
   isLoading: true,
 
@@ -81,11 +54,8 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
               id: d.id,
             } as PaymentGateway;
           });
-          saveGatewaysToLocal(remoteGateways);
           set({ gateways: remoteGateways, isLoading: false });
         } else {
-          // No remote payment gateways found; keep local list empty
-          saveGatewaysToLocal([]);
           set({ gateways: [], isLoading: false });
         }
       },
@@ -104,7 +74,6 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
       isActive: gatewayData.isActive ?? true,
     };
     const updatedGateways = [...get().gateways, newGateway];
-    saveGatewaysToLocal(updatedGateways);
     set({ gateways: updatedGateways });
 
     try {
@@ -126,7 +95,6 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
     };
 
     const updatedGateways = get().gateways.map((g) => (g.id === id ? merged : g));
-    saveGatewaysToLocal(updatedGateways);
     set({ gateways: updatedGateways });
 
     try {
@@ -148,7 +116,6 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
     };
 
     const updatedGateways = get().gateways.map((g) => (g.id === id ? merged : g));
-    saveGatewaysToLocal(updatedGateways);
     set({ gateways: updatedGateways });
 
     try {
@@ -161,7 +128,6 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
 
   deleteGateway: async (id) => {
     const updatedGateways = get().gateways.filter((g) => g.id !== id);
-    saveGatewaysToLocal(updatedGateways);
     set({ gateways: updatedGateways });
 
     try {

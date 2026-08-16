@@ -9,17 +9,208 @@ import {
   User,
 } from '../types';
 
-export const initialUsers: User[] = [];
+export const initialUsers: User[] = [
+  {
+    id: 'user-admin',
+    name: 'Admin YMA',
+    fullName: 'YMA Energy Admin',
+    email: 'admin@ymaenergy.com',
+    phone: '+255622359874',
+    role: 'ADMIN',
+    status: 'active',
+  },
+];
 
-export const initialProducts: Product[] = [];
+export const initialProducts: Product[] = [
+  {
+    id: 'prod-01',
+    name: 'Jinko Solar Monocrystalline N-Type 585W Panel',
+    category: 'Solar Panels',
+    priceTzs: 380000,
+    stock: 45,
+    lowStockThreshold: 5,
+    specifications: '585W Peak Power | 22.6% Efficiency | SMBB Technology | Anti-PID Guaranteed',
+    description: 'Tier-1 High Efficiency Monocrystalline Solar Panel built for tropical temperatures and extreme radiation resilience across Tanzania.',
+    imageUrl: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&q=80&w=800',
+    warrantyPeriod: '25 Years Performance Warranty',
+    rating: 4.9,
+  },
+  {
+    id: 'prod-02',
+    name: 'Deye 8kW Hybrid Dual-MPPT Inverter (48V)',
+    category: 'Hybrid Inverters',
+    priceTzs: 4850000,
+    stock: 12,
+    lowStockThreshold: 5,
+    specifications: '8kW Continuous Power | Pure Sine Wave | Dual MPPT | Generator Auto-Start Support | IP65',
+    description: 'Intelligent hybrid solar inverter supporting grid, generator, and lithium battery management with real-time mobile app tracking.',
+    imageUrl: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&q=80&w=800',
+    warrantyPeriod: '5 Years Manufacturer Warranty',
+    rating: 5.0,
+  },
+  {
+    id: 'prod-03',
+    name: 'Felicity ESS 10kWh LiFePO4 Lithium Battery 51.2V',
+    category: 'Lithium Batteries',
+    priceTzs: 6200000,
+    stock: 18,
+    lowStockThreshold: 5,
+    specifications: '10.24kWh Energy | 200Ah Capacity | 6000+ Cycles at 80% DoD | Built-in Smart BMS',
+    description: 'Long-life Lithium Iron Phosphate (LiFePO4) energy storage system ideal for 24/7 off-grid homes and commercial enterprises.',
+    imageUrl: 'https://images.unsplash.com/photo-1558441719-678226078170?auto=format&fit=crop&q=80&w=800',
+    warrantyPeriod: '10 Years Cycle Warranty',
+    rating: 4.9,
+  },
+  {
+    id: 'prod-04',
+    name: 'Victron Energy MPPT 150/70 SmartSolar Charge Controller',
+    category: 'Accessories',
+    priceTzs: 1150000,
+    stock: 25,
+    lowStockThreshold: 5,
+    specifications: '150V Max PV | 70A Charge Current | Built-in Bluetooth | Ultra-fast MPPT Tracking',
+    description: 'Premium Dutch-engineered solar charge controller with ultra-fast maximum power point tracking and Bluetooth monitoring.',
+    imageUrl: 'https://images.unsplash.com/photo-1548611716-30018593361e?auto=format&fit=crop&q=80&w=800',
+    warrantyPeriod: '5 Years Warranty',
+    rating: 4.8,
+  },
+  {
+    id: 'prod-05',
+    name: 'Grundfos SQFlex 3" Submersible Solar Water Pump',
+    category: 'Solar Pumps',
+    priceTzs: 3900000,
+    stock: 3,
+    lowStockThreshold: 5,
+    specifications: 'DC/AC Dual Supply | Max Head 120m | Max Flow 18m³/day | Stainless Steel 316',
+    description: 'High-head solar submersible water pump built for agricultural irrigation, livestock watering, and rural water supply.',
+    imageUrl: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&q=80&w=800',
+    warrantyPeriod: '3 Years Warranty',
+    rating: 4.7,
+  },
+  {
+    id: 'prod-06',
+    name: 'Must 3.2kW 24V Pure Sine Wave Solar Inverter',
+    category: 'Hybrid Inverters',
+    priceTzs: 1450000,
+    stock: 30,
+    lowStockThreshold: 5,
+    specifications: '3200W Output | 80A MPPT Solar Charger | Smart Battery Charger | LCD Screen',
+    description: 'Compact high-value hybrid solar inverter ideal for domestic homes, small shops, and office backup systems.',
+    imageUrl: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800',
+    warrantyPeriod: '2 Years Warranty',
+    rating: 4.6,
+  },
+  {
+    id: 'prod-07',
+    name: 'Sollatek 200Ah 12V Deep Cycle Solar Gel Battery',
+    category: 'Gel Batteries',
+    priceTzs: 850000,
+    stock: 0,
+    lowStockThreshold: 5,
+    specifications: '200Ah Capacity | Maintenance Free | Heavy Duty Lead-Calcium Alloy Grid',
+    description: 'Reliable deep cycle gel battery designed for home inverter backup and solar lighting kits.',
+    imageUrl: 'https://images.unsplash.com/photo-1619641782868-3e54b67941cb?auto=format&fit=crop&q=80&w=800',
+    warrantyPeriod: '2 Years Warranty',
+    rating: 4.5,
+  },
+];
 
-export const initialServices: SolarService[] = [];
+export const initialServices: SolarService[] = [
+  {
+    id: 'srv-01',
+    name: 'Residential Solar Turnkey Installation',
+    nameSw: 'Ufungaji wa Mfumo wa Sola Nyumbani (Turnkey)',
+    category: 'Installation',
+    description: 'Complete home solar survey, sizing, panel mounting, in-house cabling, protection box setup, and live commissioning.',
+    descriptionSw: 'Uchunguzi wa kina wa nyumba, ukadiriaji wa vifaa, ufungaji wa mbao za sola, nyaya za ndani, na kuanzisha mfumo.',
+    features: ['Site Solar Survey', 'Tier-1 Panel Mounting', 'Protection Fuses & Earthing', 'Live System Commissioning'],
+    durationHours: '1 - 2 Days',
+    basePriceTzs: 450000,
+    imageUrl: 'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&q=80&w=800',
+  },
+  {
+    id: 'srv-02',
+    name: 'Commercial Solar Audit & Design',
+    nameSw: 'Uchunguzi wa Mfumo wa Sola Viwandani na Maofisini',
+    category: 'Audit & Engineering',
+    description: 'Thermal imaging analysis, harmonic analysis, load profiling, and payback period calculation for commercial facilities.',
+    descriptionSw: 'Uchambuzi wa joto na mizigo ya umeme viwandani pamoja na ukadiriaji wa faida ya kurejesha gharama za sola.',
+    features: ['Thermal Camera Scan', 'Power Quality Logger', 'ROI & Payback Report', 'Engineering Blueprint'],
+    durationHours: '3 - 5 Days',
+    basePriceTzs: 950000,
+    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=800',
+  },
+  {
+    id: 'srv-03',
+    name: 'Lithium Battery BMS Upgrade & Balancing',
+    nameSw: 'Kufanya Upembuzi na Kurekebisha Betri za Lithium (BMS)',
+    category: 'Maintenance',
+    description: 'Cell voltage balancing, BMS Firmware update, state-of-health diagnostics, and temperature sensor testing for 48V banks.',
+    descriptionSw: 'Kulinganisha vuguvugu la cell za lithium, kusasisha mfumo wa BMS, na kupima afya ya betri nyumbani na maofisini.',
+    features: ['Active Cell Balancing', 'BMS Firmware Flash', 'Capacity Test Discharge', 'Diagnostic Health Certificate'],
+    durationHours: '4 - 6 Hours',
+    basePriceTzs: 250000,
+    imageUrl: 'https://images.unsplash.com/photo-1558441719-678226078170?auto=format&fit=crop&q=80&w=800',
+  },
+];
 
-export const initialBranches: Branch[] = [];
+export const initialBranches: Branch[] = [
+  {
+    id: 'br-dar',
+    name: 'Dar es Salaam HQ',
+    city: 'Dar es Salaam',
+    address: 'Plot 44, Mikocheni B, Sayansi / Kijitonyama Road',
+    phone: '+255 622 359 874',
+    email: 'dar@ymaenergy.com',
+    lat: -6.772,
+    lng: 39.231,
+    isHeadquarters: true,
+  },
+  {
+    id: 'br-arusha',
+    name: 'Arusha Northern Zone Hub',
+    city: 'Arusha',
+    address: 'Clocktower Mall, Suite 102, Sokoine Road',
+    phone: '+255 754 112 233',
+    email: 'arusha@ymaenergy.com',
+    lat: -3.373,
+    lng: 36.694,
+    isHeadquarters: false,
+  },
+  {
+    id: 'br-mwanza',
+    name: 'Mwanza Lake Zone Branch',
+    city: 'Mwanza',
+    address: 'Capri Point Plaza, Station Road',
+    phone: '+255 788 445 566',
+    email: 'mwanza@ymaenergy.com',
+    lat: -2.516,
+    lng: 32.9,
+    isHeadquarters: false,
+  },
+  {
+    id: 'br-dodoma',
+    name: 'Dodoma Capital Branch',
+    city: 'Dodoma',
+    address: 'Uhuru Way, Opposite NMB Capital Branch',
+    phone: '+255 712 990 011',
+    email: 'dodoma@ymaenergy.com',
+    lat: -6.173,
+    lng: 35.741,
+    isHeadquarters: false,
+  },
+];
 
 export const initialReviews: CustomerReview[] = [];
 
-export const initialAppliances: ApplianceLoad[] = [];
+export const initialAppliances: ApplianceLoad[] = [
+  { id: 'app-1', name: 'LED Bulbs (Taa za LED)', defaultWatts: 10, category: 'Lighting' },
+  { id: 'app-2', name: 'Refrigerator / Freezer (Friji)', defaultWatts: 150, category: 'Kitchen' },
+  { id: 'app-3', name: 'Smart TV 55" (Runinga)', defaultWatts: 100, category: 'Electronics' },
+  { id: 'app-4', name: 'Ceiling Fan (Feni ya Dari)', defaultWatts: 65, category: 'Cooling' },
+  { id: 'app-5', name: 'Air Conditioner 1.5 HP (AC)', defaultWatts: 1200, category: 'Cooling' },
+  { id: 'app-6', name: 'Water Submersible Pump (Pampu ya Maji)', defaultWatts: 750, category: 'Heavy Load' },
+];
 
 export const initialOrders: Order[] = [];
 

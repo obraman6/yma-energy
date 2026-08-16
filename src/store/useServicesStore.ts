@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { SolarService, ServiceRequest, ServiceStatus } from '../types';
+import { initialServices } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { useNotificationStore } from './useNotificationStore';
 import {
@@ -32,7 +33,7 @@ interface ServicesState {
 }
 
 export const useServicesStore = create<ServicesState>((set, get) => ({
-  services: [],
+  services: initialServices,
   serviceRequests: [],
   isFirebaseSynced: false,
   isLoading: true,
