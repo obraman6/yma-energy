@@ -16,7 +16,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { db } from '../../lib/firebase';
-import { collection, onSnapshot, doc, deleteDoc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, setDoc, addDoc } from 'firebase/firestore';
+import { useAuthStore } from '../../store/useAuthStore';
 import firebaseConfig from '../../../firebase-applet-config.json';
 import { useToastStore } from '../../store/useToastStore';
 import { useLanguage } from '../../context/LanguageContext';
@@ -47,6 +48,9 @@ export const FirebaseDataInspector: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'table' | 'json'>('table');
   const [inspectDoc, setInspectDoc] = useState<Record<string, any> | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editJson, setEditJson] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirmDocId, setDeleteConfirmDocId] = useState<string | null>(null);
 
   const showToast = useToastStore((s) => s.showToast);
@@ -146,6 +150,8 @@ export const FirebaseDataInspector: React.FC = () => {
   const clearServices = useServicesStore((s) => s.clearAllServicesAndRequests);
   const clearOrders = useOrdersStore((s) => s.clearAllOrders);
 
+  const currentUser = useAuthStore((s) => s.user);
+
   const handleWipeAllData = async () => {
     const confirmMsg =
       language === 'sw'
@@ -180,6 +186,48 @@ export const FirebaseDataInspector: React.FC = () => {
         message: err.message,
         type: 'warning',
       });
+    }
+  };
+
+  const handleCreateDoc = async (rawJson?: string) => {
+    let payload: any = {};
+    try {
+      payload = rawJson ? JSON.parse(rawJson) : { createdAt: new Date().toISOString() };
+    } catch (err: any) {
+      showToast({ title: language === 'sw' ? 'JSON Isiyo Sahihi' : 'Invalid JSON', message: err.message, type: 'warning' });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const ref = await addDoc(collection(db, selectedCollection), payload);
+      setIsSaving(false);
+      showToast({ title: language === 'sw' ? 'Hati Imetengenezwa' : 'Document Created', message: ref.id, type: 'success' });
+    } catch (err: any) {
+      setIsSaving(false);
+      showToast({ title: language === 'sw' ? 'Hitilafu' : 'Error', message: err.message, type: 'warning' });
+    }
+  };
+
+  const handleUpdateDoc = async (docId: string, rawJson: string) => {
+    let payload: any = {};
+    try {
+      payload = JSON.parse(rawJson);
+    } catch (err: any) {
+      showToast({ title: language === 'sw' ? 'JSON Isiyo Sahihi' : 'Invalid JSON', message: err.message, type: 'warning' });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await setDoc(doc(db, selectedCollection, docId), payload, { merge: true });
+      setIsSaving(false);
+      setIsEditing(false);
+      setInspectDoc(null);
+      showToast({ title: language === 'sw' ? 'Hati Imerejeshwa' : 'Document Updated', message: docId, type: 'success' });
+    } catch (err: any) {
+      setIsSaving(false);
+      showToast({ title: language === 'sw' ? 'Hitilafu ya Kuhifadhi' : 'Save Error', message: err.message, type: 'warning' });
     }
   };
 
@@ -254,6 +302,18 @@ export const FirebaseDataInspector: React.FC = () => {
               <span>{language === 'sw' ? 'Jaribu Kuweka Hati' : 'Test Write Document'}</span>
             </button>
 
+            <button
+              onClick={() => {
+                setIsEditing(true);
+                setEditJson(JSON.stringify({ createdAt: new Date().toISOString() }, null, 2));
+                setInspectDoc(null);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{language === 'sw' ? 'Unda Hati Mpya' : 'Create Document'}</span>
+            </button>
+
             <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
               <button
                 onClick={() => setViewMode('table')}
@@ -323,7 +383,16 @@ export const FirebaseDataInspector: React.FC = () => {
         </div>
 
         {/* Content Display */}
-        {isLoading ? (
+        {currentUser?.role !== 'ADMIN' ? (
+          <div className="p-6 text-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-800">
+            <h4 className="font-bold text-sm">{language === 'sw' ? 'Ruhusa Imezuiliwa' : 'Access Restricted'}</h4>
+            <p className="text-xs text-slate-500 mt-2">
+              {language === 'sw'
+                ? 'Ukinufaika na ukurasa huu, unahitaji kuwa Super Admin (role: ADMIN) ili kufanya CRUD kwenye Firestore.'
+                : 'You need to be a Super Admin (role: ADMIN) to perform CRUD operations on Firestore.'}
+            </p>
+          </div>
+        ) : isLoading ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
             <ConcentricSpinner
               size="lg"
@@ -423,7 +492,53 @@ export const FirebaseDataInspector: React.FC = () => {
       </div>
 
       {/* Raw Document Inspection Modal */}
-      {inspectDoc && (
+      {isEditing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden space-y-4 p-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Code className="w-5 h-5 text-amber-500" />
+                <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  {language === 'sw' ? 'Hariri/Unda Hati' : 'Edit / Create Document'}
+                </h4>
+              </div>
+              <div>
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditJson('');
+                  }}
+                  className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 mr-2"
+                >
+                  {language === 'sw' ? 'Ghairi' : 'Cancel'}
+                </button>
+                <button
+                  onClick={() => {
+                    // Create new doc
+                    handleCreateDoc(editJson);
+                    setIsEditing(false);
+                    setEditJson('');
+                  }}
+                  disabled={isSaving}
+                  className="px-3 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold"
+                >
+                  {isSaving ? (language === 'sw' ? 'Inahifadhi...' : 'Saving...') : language === 'sw' ? 'Unda' : 'Create'}
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-200 font-mono text-xs overflow-auto max-h-[520px]">
+              <textarea
+                value={editJson}
+                onChange={(e) => setEditJson(e.target.value)}
+                className="w-full h-[380px] bg-transparent outline-none resize-none text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {inspectDoc && !isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
           <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden space-y-4 p-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -433,12 +548,25 @@ export const FirebaseDataInspector: React.FC = () => {
                   Firestore Document: <span className="font-mono text-amber-500">{inspectDoc._docId}</span>
                 </h4>
               </div>
-              <button
-                onClick={() => setInspectDoc(null)}
-                className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300"
-              >
-                {language === 'sw' ? 'Funga' : 'Close'}
-              </button>
+              <div>
+                <button
+                  onClick={() => setInspectDoc(null)}
+                  className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 mr-2"
+                >
+                  {language === 'sw' ? 'Funga' : 'Close'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditing(true);
+                    const copy = { ...inspectDoc };
+                    delete copy._docId;
+                    setEditJson(JSON.stringify(copy, null, 2));
+                  }}
+                  className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold"
+                >
+                  {language === 'sw' ? 'Hariri' : 'Edit'}
+                </button>
+              </div>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-950 text-emerald-400 font-mono text-xs overflow-x-auto max-h-[400px]">

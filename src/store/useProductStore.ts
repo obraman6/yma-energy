@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { Product, ProductCategory, CustomerReview } from '../types';
-import { initialProducts, initialReviews } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { useNotificationStore } from './useNotificationStore';
 import {
@@ -41,7 +40,7 @@ interface ProductState {
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
-  products: initialProducts,
+  products: [],
   reviews: [],
   selectedCategory: 'All',
   searchQuery: '',
@@ -62,7 +61,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
           const remoteProducts: Product[] = snapshot.docs.map((d) => d.data() as Product);
           set({ products: remoteProducts, isLoading: false });
         } else {
-          set({ products: initialProducts, isLoading: false });
+          set({ products: [], isLoading: false });
         }
       },
       (err) => {

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { SolarService, ServiceRequest, ServiceStatus } from '../types';
-import { initialServices } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { useNotificationStore } from './useNotificationStore';
 import {
@@ -33,7 +32,7 @@ interface ServicesState {
 }
 
 export const useServicesStore = create<ServicesState>((set, get) => ({
-  services: initialServices,
+  services: [],
   serviceRequests: [],
   isFirebaseSynced: false,
   isLoading: true,
@@ -51,7 +50,7 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
           const remoteServices: SolarService[] = snapshot.docs.map((d) => d.data() as SolarService);
           set({ services: remoteServices, isLoading: false });
         } else {
-          set({ services: initialServices, isLoading: false });
+          set({ services: [], isLoading: false });
         }
       },
       (err) => {

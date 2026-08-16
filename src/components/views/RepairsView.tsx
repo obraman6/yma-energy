@@ -41,6 +41,7 @@ interface RepairsViewProps {
 export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenTechnicianStatusModal }) => {
   const { t } = useLanguage();
   const { repairRequests, createRepairTicket } = useRepairsStore();
+  const { initFirebaseSync } = useRepairsStore();
   const { user } = useAuthStore();
   const showToast = useToastStore((s) => s.showToast);
 
@@ -128,6 +129,12 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
       type: 'success',
     });
   };
+
+  React.useEffect(() => {
+    if (user) {
+      initFirebaseSync(user.id);
+    }
+  }, [user, initFirebaseSync]);
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-12">
@@ -375,7 +382,9 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
           </h2>
 
           <div className="space-y-3">
-            {repairRequests.map((req) => (
+            {repairRequests
+              .filter((req) => user ? req.userId === user.id : false)
+              .map((req) => (
               <div
                 key={req.id}
                 className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-sm"

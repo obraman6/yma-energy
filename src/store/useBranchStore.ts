@@ -35,7 +35,7 @@ const loadBranchesFromLocal = (): Branch[] => {
   } catch (e) {
     console.error('Error loading branches from localStorage:', e);
   }
-  return initialBranches;
+  return [];
 };
 
 const saveBranchesToLocal = (branches: Branch[]) => {
@@ -70,16 +70,9 @@ export const useBranchStore = create<BranchState>((set, get) => ({
           saveBranchesToLocal(remoteBranches);
           set({ branches: remoteBranches, isLoading: false });
         } else {
-          // Seed initial branches to Firestore
-          const currentLocal = get().branches;
-          currentLocal.forEach((b) => {
-            const cleanDoc = JSON.parse(JSON.stringify(b));
-            setDoc(doc(db, 'branches', b.id), cleanDoc, { merge: true }).catch((e) =>
-              console.error('Seeding branch error:', e)
-            );
-          });
-          saveBranchesToLocal(currentLocal);
-          set({ isLoading: false });
+          // No remote branches found. Start with empty local branches.
+          saveBranchesToLocal([]);
+          set({ branches: [], isLoading: false });
         }
       },
       (err) => {

@@ -9,13 +9,15 @@ import {
   doc,
   setDoc,
   updateDoc,
+  query,
+  where,
 } from 'firebase/firestore';
 
 interface RepairsState {
   repairRequests: RepairRequest[];
   isFirebaseSynced: boolean;
 
-  initFirebaseSync: () => void;
+  initFirebaseSync: (userId?: string) => void;
 
   createRepairTicket: (req: Omit<RepairRequest, 'id' | 'requestNumber' | 'status' | 'createdAt'>) => Promise<RepairRequest>;
   dispatchTechnician: (ticketId: string, techName: string, techPhone?: string, techId?: string, techEmail?: string) => Promise<void>;
@@ -28,19 +30,29 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
   repairRequests: [],
   isFirebaseSynced: false,
 
-  initFirebaseSync: () => {
+  initFirebaseSync: (userId?: string) => {
     if (get().isFirebaseSynced) return;
     set({ isFirebaseSynced: true });
 
-    const repairsRef = collection(db, 'repairs');
-    onSnapshot(
-      repairsRef,
-      (snapshot) => {
-        const remoteRepairs: RepairRequest[] = snapshot.docs.map((d) => d.data() as RepairRequest);
-        set({ repairRequests: remoteRepairs });
-      },
-      (err) => console.error('Firestore repairs sync error:', err)
-    );
+    try {
+      // If userId provided, subscribe only to that user's repair documents
+      let repairsRef = collection(db, 'repairs');
+      if (userId) {
+        const q = query(repairsRef, where('userId', '==', userId));
+        repairsRef = q as any;
+      }
+
+      onSnapshot(
+        repairsRef,
+        (snapshot) => {
+          const remoteRepairs: RepairRequest[] = snapshot.docs.map((d) => d.data() as RepairRequest);
+          set({ repairRequests: remoteRepairs });
+        },
+        (err) => console.error('Firestore repairs sync error:', err)
+      );
+    } catch (err) {
+      console.error('Error initializing repairs sync:', err);
+    }
   },
 
   createRepairTicket: async (ticketData) => {
@@ -223,5 +235,4 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
   },
 }));
 
-// Initialize Firebase sync automatically
-useRepairsStore.getState().initFirebaseSync();
+// Note: repairs sync is initialized on-demand per-user to avoid exposing other users' tickets.
