@@ -12,7 +12,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem('yma_theme');
-    return (saved === 'dark' || saved === 'light') ? saved : 'light';
+    return (saved === 'dark' || saved === 'light') ? saved : 'dark';
   });
 
   const setTheme = (mode: ThemeMode) => {

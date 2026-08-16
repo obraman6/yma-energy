@@ -15,7 +15,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('yma_language');
-    return (saved === 'sw' || saved === 'en') ? saved : 'sw'; // Default to Swahili
+    return (saved === 'sw' || saved === 'en') ? saved : 'en'; // Default to English
   });
 
   const setLanguage = (lang: Language) => {
