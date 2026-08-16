@@ -18,6 +18,7 @@ interface OrdersState {
   isLoading: boolean;
 
   initFirebaseSync: () => void;
+  forceRefresh: () => Promise<void>;
 
   placeOrder: (orderData: Omit<Order, 'id' | 'orderNumber' | 'invoiceNumber' | 'createdAt' | 'status'>) => Promise<Order>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
@@ -47,6 +48,11 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
         set({ isLoading: false });
       }
     );
+  },
+
+  forceRefresh: async () => {
+    set({ orders: [], isLoading: true, isFirebaseSynced: false });
+    get().initFirebaseSync();
   },
 
   placeOrder: async (orderData) => {

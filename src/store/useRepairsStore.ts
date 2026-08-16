@@ -14,8 +14,10 @@ import {
 interface RepairsState {
   repairRequests: RepairRequest[];
   isFirebaseSynced: boolean;
+  isLoading: boolean;
 
   initFirebaseSync: () => void;
+  forceRefresh: () => Promise<void>;
 
   createRepairTicket: (req: Omit<RepairRequest, 'id' | 'requestNumber' | 'status' | 'createdAt'>) => Promise<RepairRequest>;
   dispatchTechnician: (ticketId: string, techName: string, techPhone?: string, techId?: string, techEmail?: string) => Promise<void>;
@@ -27,6 +29,7 @@ interface RepairsState {
 export const useRepairsStore = create<RepairsState>((set, get) => ({
   repairRequests: [],
   isFirebaseSynced: false,
+  isLoading: true,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -37,10 +40,18 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
       repairsRef,
       (snapshot) => {
         const remoteRepairs: RepairRequest[] = snapshot.docs.map((d) => d.data() as RepairRequest);
-        set({ repairRequests: remoteRepairs });
+        set({ repairRequests: remoteRepairs, isLoading: false });
       },
-      (err) => console.error('Firestore repairs sync error:', err)
+      (err) => {
+        console.error('Firestore repairs sync error:', err);
+        set({ isLoading: false });
+      }
     );
+  },
+
+  forceRefresh: async () => {
+    set({ repairRequests: [], isLoading: true, isFirebaseSynced: false });
+    get().initFirebaseSync();
   },
 
   createRepairTicket: async (ticketData) => {
