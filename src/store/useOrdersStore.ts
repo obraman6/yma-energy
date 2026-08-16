@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { Order, OrderStatus } from '../types';
-import { initialOrders } from '../data/mockData';
 import { db } from '../lib/firebase';
 import { sendAdminEmailTrigger } from '../services/emailService';
 import { useProductStore } from './useProductStore';

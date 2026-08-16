@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { Branch } from '../types';
-import { initialBranches } from '../data/mockData';
 import { db } from '../lib/firebase';
 import {
   collection,

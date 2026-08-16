@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Warranty, WarrantyClaim } from '../types';
-import { initialWarranties } from '../data/mockData';
 
 interface WarrantyState {
   warranties: Warranty[];
