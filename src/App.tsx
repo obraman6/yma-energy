@@ -22,7 +22,7 @@ import { ContactView } from './components/views/ContactView';
 // Modals
 import { ProductDetailModal } from './components/modals/ProductDetailModal';
 import { ServiceBookingModal } from './components/modals/ServiceBookingModal';
-import { LocationPickerModal } from './components/modals/LocationPickerModal';
+
 import { ElectronicInvoiceModal } from './components/modals/ElectronicInvoiceModal';
 import { LiveDeliveryModal } from './components/modals/LiveDeliveryModal';
 import { WarrantyClaimModal } from './components/modals/WarrantyClaimModal';
@@ -80,7 +80,6 @@ function MainAppContent() {
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [selectedServiceForModal, setSelectedServiceForModal] = useState<SolarService | null>(null);
   const [selectedTechnicianItem, setSelectedTechnicianItem] = useState<ServiceRequest | RepairRequest | null>(null);
-  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<Order | null>(null);
   const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState<Order | null>(null);
   const [selectedWarrantyForClaim, setSelectedWarrantyForClaim] = useState<Warranty | null>(null);
@@ -213,7 +212,6 @@ function MainAppContent() {
             {activeTab === 'cart' && (
               <CartView
                 setActiveTab={setActiveTab}
-                openLocationPicker={() => setIsLocationPickerOpen(true)}
                 onOrderPlaced={handleOrderPlaced}
                 openAuthModal={() => setIsAuthOpen(true)}
               />
@@ -300,7 +298,6 @@ function MainAppContent() {
             service={selectedServiceForModal}
             isOpen={!!selectedServiceForModal}
             onClose={() => setSelectedServiceForModal(null)}
-            onOpenLocationPicker={() => setIsLocationPickerOpen(true)}
             onRequireAuth={() => setIsAuthOpen(true)}
             onOpenTechnicianStatusModal={(item) => setSelectedTechnicianItem(item)}
           />
@@ -310,11 +307,6 @@ function MainAppContent() {
             isOpen={!!selectedTechnicianItem}
             onClose={() => setSelectedTechnicianItem(null)}
             onOpenLiveChat={() => setIsLiveChatOpen(true)}
-          />
-
-          <LocationPickerModal
-            isOpen={isLocationPickerOpen}
-            onClose={() => setIsLocationPickerOpen(false)}
           />
 
           <ElectronicInvoiceModal

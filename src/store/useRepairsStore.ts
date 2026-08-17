@@ -92,7 +92,7 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
         requestNumber: newTicket.requestNumber,
         customerName: newTicket.customerName,
         phone: newTicket.phone,
-        location: `${newTicket.streetAddress}, ${newTicket.region}`,
+        location: `${newTicket.region}`,
         equipmentType: newTicket.equipmentType,
         problemDescription: newTicket.description,
       },

@@ -78,7 +78,6 @@ export interface ServiceRequest {
   email: string;
   region: string;
   district: string;
-  streetAddress: string;
   preferredDate: string;
   timeSlot: 'Morning' | 'Afternoon' | 'Evening';
   roofType: 'Iron Sheet' | 'Tiles' | 'Concrete Slab' | 'Ground Mount';
@@ -105,7 +104,6 @@ export interface RepairRequest {
   customerName: string;
   phone: string;
   region: string;
-  streetAddress: string;
   equipmentType: string;
   description: string;
   priority: RepairPriority;

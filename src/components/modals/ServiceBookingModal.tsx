@@ -22,7 +22,6 @@ interface ServiceBookingModalProps {
   service: SolarService | null;
   isOpen: boolean;
   onClose: () => void;
-  onOpenMapPicker: () => void;
   onRequireAuth?: () => void;
   onOpenTechnicianStatusModal?: (item: ServiceRequest) => void;
 }
@@ -31,7 +30,6 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
   service,
   isOpen,
   onClose,
-  onOpenMapPicker,
   onRequireAuth,
   onOpenTechnicianStatusModal,
 }) => {
@@ -45,7 +43,6 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
   const [email, setEmail] = useState(user?.email || '');
   const [region, setRegion] = useState('');
   const [district, setDistrict] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
   const [timeSlot, setTimeSlot] = useState<'Morning' | 'Afternoon' | 'Evening'>('Morning');
   const [roofType, setRoofType] = useState<'Iron Sheet' | 'Tiles' | 'Concrete Slab' | 'Ground Mount'>('Iron Sheet');
@@ -68,10 +65,10 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
       return;
     }
 
-    if (!region.trim() || !district.trim() || !streetAddress.trim() || !preferredDate) {
+    if (!region.trim() || !district.trim() || !preferredDate) {
       showToast({
         title: 'Taarifa Hazijakamilika 📍',
-        message: 'Tafadhali chagua Mkoa, ujaze Wilaya, Mtaa na Tarehe unayohitaji huduma.',
+        message: 'Tafadhali chagua Mkoa, ujaze Wilaya na Tarehe unayohitaji huduma.',
         type: 'warning',
       });
       return;
@@ -86,7 +83,6 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
       email: email || user.email,
       region,
       district,
-      streetAddress,
       preferredDate,
       timeSlot,
       roofType,
@@ -206,7 +202,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
               </div>
 
               {/* Email & Location Pin */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     {t('region')} *
@@ -232,31 +228,8 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                     required
                   />
                 </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    {t('streetAddress')} *
-                  </label>
-                  <input
-                    type="text"
-                    value={streetAddress}
-                    onChange={(e) => setStreetAddress(e.target.value)}
-                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
-                    required
-                  />
-                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={onOpenMapPicker}
-                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-amber-500/60 bg-amber-50/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-2 hover:bg-amber-100/50 transition-colors"
-              >
-                <MapPin className="w-4 h-4" />
-                <span>{t('selectLocationMap')}</span>
-              </button>
-
-              {/* Date & Time Slot */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">

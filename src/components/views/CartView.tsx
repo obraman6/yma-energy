@@ -25,14 +25,12 @@ import { PaymentMethod, Order } from '../../types';
 
 interface CartViewProps {
   setActiveTab: (tab: string) => void;
-  openLocationPicker: () => void;
   onOrderPlaced: (order: Order) => void;
   openAuthModal?: () => void;
 }
 
 export const CartView: React.FC<CartViewProps> = ({
   setActiveTab,
-  openLocationPicker,
   onOrderPlaced,
   openAuthModal,
 }) => {
@@ -48,8 +46,8 @@ export const CartView: React.FC<CartViewProps> = ({
     removeCoupon,
     customerName,
     customerPhone,
-    shippingAddress,
     selectedRegion,
+    selectedDistrict,
     paymentMethod,
     paymentPhone,
     transactionRef,
@@ -129,13 +127,13 @@ export const CartView: React.FC<CartViewProps> = ({
 
     const finalName = (customerName || user.name || '').trim();
     const finalPhone = (customerPhone || user.phone || '').trim();
-    const finalAddress = (shippingAddress || '').trim();
+    const finalDistrict = (selectedDistrict || '').trim();
     const finalRegion = (selectedRegion || '').trim();
 
-    if (!finalName || !finalPhone || !finalAddress || !finalRegion) {
+    if (!finalName || !finalPhone || !finalDistrict || !finalRegion) {
       useToastStore.getState().showToast({
         title: 'Taarifa za Anwani Zinatakiwa 📍',
-        message: 'Tafadhali jaza Jina, Namba ya Simu, Mkoa na Anwani kamili ya Mtaa/Eneo la kufikishiwa mzigo.',
+        message: 'Tafadhali jaza Jina, Namba ya Simu, Mkoa na Wilaya.',
         type: 'warning',
       });
       return;
@@ -157,7 +155,7 @@ export const CartView: React.FC<CartViewProps> = ({
         userId: user.id,
         customerName: finalName,
         customerPhone: finalPhone,
-        shippingAddress: finalAddress,
+        shippingAddress: finalDistrict,
         region: finalRegion,
         paymentMethod,
         paymentRef: transactionRef.trim(),
@@ -354,26 +352,31 @@ export const CartView: React.FC<CartViewProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Delivery Street Address & Region
-              </label>
-              <input
-                type="text"
-                value={shippingAddress}
-                onChange={(e) => setShippingInfo({ shippingAddress: e.target.value })}
-                className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
-              />
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Mkoa (Region)
+                </label>
+                <input
+                  type="text"
+                  value={selectedRegion}
+                  onChange={(e) => setShippingInfo({ selectedRegion: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                />
+              </div>
 
-            <button
-              type="button"
-              onClick={openLocationPicker}
-              className="w-full py-2.5 px-3 rounded-xl border border-dashed border-amber-500/60 bg-amber-50/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-2 hover:bg-amber-100/50 transition-colors"
-            >
-              <MapPin className="w-4 h-4" />
-              <span>{t('selectLocationMap')} ({selectedRegion})</span>
-            </button>
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                  Wilaya (District)
+                </label>
+                <input
+                  type="text"
+                  value={selectedDistrict}
+                  onChange={(e) => setShippingInfo({ selectedDistrict: e.target.value })}
+                  className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Payment Options */}

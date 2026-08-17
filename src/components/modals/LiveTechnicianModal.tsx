@@ -283,7 +283,7 @@ export const LiveTechnicianModal: React.FC<LiveTechnicianModalProps> = ({
                 <p className="text-xs font-extrabold text-white flex items-center justify-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-amber-400" />
                   <span>
-                    {item.streetAddress ? `${item.streetAddress}, ${item.region}` : item.region || 'Tanzania'}
+                    {item.region || 'Tanzania'}
                   </span>
                 </p>
                 <p className="text-[11px] font-bold text-amber-400 mt-0.5">

@@ -328,7 +328,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                       <strong className="text-slate-900 dark:text-slate-100 block">{r.customerName}</strong>
                       <p className="text-slate-600 dark:text-slate-400 flex items-center gap-1 font-mono">
                         <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                        <span>{r.streetAddress}, {r.region}</span>
+                        <span>{r.region}</span>
                       </p>
                       <div className="pt-1 flex gap-2">
                         <a
@@ -417,7 +417,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                       <strong className="text-slate-900 dark:text-slate-100 block">{s.customerName}</strong>
                       <p className="text-slate-600 dark:text-slate-400 flex items-center gap-1 font-mono">
                         <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>{s.streetAddress}, {s.district}, {s.region}</span>
+                        <span>{s.district}, {s.region}</span>
                       </p>
                     </div>
                   </div>
@@ -495,7 +495,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                     <p>Mteja: <strong className="text-slate-900 dark:text-slate-100">{r.customerName} ({r.phone})</strong></p>
                     <p className="flex items-center gap-1 font-mono text-slate-600 dark:text-slate-400">
                       <MapPin className="w-3.5 h-3.5 text-sky-500" />
-                      <span>{r.streetAddress}, {r.region}</span>
+                      <span>{r.region}</span>
                     </p>
                     <p className="italic text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl">
                       "{r.description}"
@@ -578,7 +578,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                     <p>Mteja: <strong className="text-slate-900 dark:text-slate-100">{s.customerName} ({s.phone})</strong></p>
                     <p className="flex items-center gap-1 font-mono text-slate-600 dark:text-slate-400">
                       <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                      <span>{s.streetAddress}, {s.region}</span>
+                      <span>{s.region}</span>
                     </p>
                   </div>
 

@@ -20,16 +20,7 @@ import { useRepairsStore } from '../../store/useRepairsStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
 
-const equipmentTypes = [
-  'Hybrid Inverter',
-  'Lithium Battery Pack',
-  'Gel Deep Cycle Battery',
-  'Solar Panels Array',
-  'MPPT Charge Controller',
-  'Wiring & AC/DC Protection Fuse',
-  'Solar Water Heater Tank',
-  'Submersible Solar Pump',
-];
+
 
 import { RepairRequest } from '../../types';
 
@@ -47,8 +38,7 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
   const [customerName, setCustomerName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [region, setRegion] = useState('');
-  const [streetAddress, setStreetAddress] = useState('');
-  const [selectedEquipment, setSelectedEquipment] = useState('');
+
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'Normal' | 'Urgent'>('Urgent');
 
@@ -95,10 +85,10 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
       return;
     }
 
-    if (!customerName.trim() || !phone.trim() || !region.trim() || !streetAddress.trim() || !selectedEquipment || !description.trim()) {
+    if (!customerName.trim() || !phone.trim() || !region.trim() || !description.trim()) {
       showToast({
         title: 'Taarifa Hazijakamilika 📍',
-        message: 'Tafadhali jaza Jina, Simu, Mkoa, Mtaa, Chagua Kifaa na Maelezo ya Hitilafu kabla ya kutuma.',
+        message: 'Tafadhali jaza Jina, Simu, Mkoa na Maelezo ya Hitilafu kabla ya kutuma.',
         type: 'warning',
       });
       return;
@@ -109,8 +99,7 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
       customerName: customerName || user.name,
       phone: phone || user.phone || '',
       region,
-      streetAddress,
-      equipmentType: selectedEquipment,
+      equipmentType: 'General Repair / N/A',
       description,
       priority,
       hasPhoto: !!photoUrl,
@@ -155,11 +144,6 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         <div className="lg:col-span-2 space-y-5">
           <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-5">
-            <h2 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <span>Report Faulty Solar Equipment</span>
-            </h2>
-
             {submittedTicketRef && (
               <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs space-y-1">
                 <p className="font-bold">
@@ -172,29 +156,6 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
             )}
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
-              {/* Equipment Selection Chips */}
-              <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
-                  {t('equipmentType')} *
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {equipmentTypes.map((eq) => (
-                    <button
-                      key={eq}
-                      type="button"
-                      onClick={() => setSelectedEquipment(eq)}
-                      className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${
-                        selectedEquipment === eq
-                          ? 'bg-amber-500 text-white shadow-sm'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-                      }`}
-                    >
-                      {eq}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Priority Selection */}
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
@@ -257,7 +218,7 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
               </div>
 
               {/* Location */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <div>
                   <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     {t('region')} *
@@ -266,19 +227,6 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
                     type="text"
                     value={region}
                     onChange={(e) => setRegion(e.target.value)}
-                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    {t('streetAddress')} *
-                  </label>
-                  <input
-                    type="text"
-                    value={streetAddress}
-                    onChange={(e) => setStreetAddress(e.target.value)}
                     className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
                     required
                   />
