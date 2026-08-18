@@ -18,6 +18,7 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { useRepairsStore } from '../../store/useRepairsStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useCompanySettingsStore } from '../../store/useCompanySettingsStore';
 import { useToastStore } from '../../store/useToastStore';
 
 
@@ -33,6 +34,7 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
   const { t } = useLanguage();
   const { repairRequests, createRepairTicket } = useRepairsStore();
   const { user } = useAuthStore();
+  const { settings } = useCompanySettingsStore();
   const showToast = useToastStore((s) => s.showToast);
 
   const [customerName, setCustomerName] = useState(user?.name || '');
@@ -132,7 +134,7 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
         </div>
 
         <a
-          href="tel:+255622359874"
+          href={`tel:${settings.emergencyPhone.replace(/\s+/g, '')}`}
           className="px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-white text-rose-700 hover:bg-rose-50 font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shrink-0"
         >
           <Phone className="w-3.5 h-3.5" />

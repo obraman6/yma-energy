@@ -28,6 +28,7 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useCompanySettingsStore } from '../../store/useCompanySettingsStore';
 import { useOrdersStore } from '../../store/useOrdersStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
 import { useServicesStore } from '../../store/useServicesStore';
@@ -65,6 +66,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
   const { t, language, toggleLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const { user, login, register, resetPassword, logout, updateProfile } = useAuthStore();
+  const { settings } = useCompanySettingsStore();
   const showToast = useToastStore((s) => s.showToast);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -1007,20 +1009,20 @@ export const AccountView: React.FC<AccountViewProps> = ({
               </button>
 
               <a
-                href="https://wa.me/255622359874"
+                href={`https://wa.me/${settings.companyPhone.replace(/\D/g, '')}`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full p-3 rounded-xl bg-emerald-600 text-white flex items-center justify-between font-bold"
               >
-                <span>{t('whatsappUs')}</span>
+                <span>{t('whatsappUs')} ({settings.companyPhone})</span>
                 <ExternalLink className="w-4 h-4" />
               </a>
 
               <a
-                href="tel:+255622359874"
+                href={`tel:${settings.companyPhone.replace(/\s+/g, '')}`}
                 className="w-full p-3 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-between font-bold"
               >
-                <span>{t('callUs')}</span>
+                <span>{t('callUs')} ({settings.companyPhone})</span>
                 <Phone className="w-4 h-4" />
               </a>
             </div>

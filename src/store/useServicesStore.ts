@@ -147,7 +147,7 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
 
   assignEngineer: async (requestId, engineerName, engineerPhone, engineerId, engineerEmail) => {
     const target = get().serviceRequests.find((r) => r.id === requestId);
-    const assignedPhone = engineerPhone || target?.assignedTechnicianPhone || '0754 000 111';
+    const assignedPhone = engineerPhone || target?.assignedTechnicianPhone || '';
 
     const patch = {
       assignedTechnician: engineerName,
@@ -174,8 +174,8 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       useNotificationStore.getState().addNotification({
         title: `Mhandisi Apangiwa: Huduma #${target.requestNumber}`,
         titleSw: `Mhandisi Apangiwa: Huduma #${target.requestNumber}`,
-        message: `Mhandisi ${engineerName} (Simu: ${assignedPhone}) amepangiwa ombi la huduma #${target.requestNumber}.`,
-        messageSw: `Mhandisi ${engineerName} (Simu: ${assignedPhone}) amepangiwa ombi la huduma #${target.requestNumber}.`,
+        message: `Mhandisi ${engineerName}${assignedPhone ? ` (Simu: ${assignedPhone})` : ''} amepangiwa ombi la huduma #${target.requestNumber}.`,
+        messageSw: `Mhandisi ${engineerName}${assignedPhone ? ` (Simu: ${assignedPhone})` : ''} amepangiwa ombi la huduma #${target.requestNumber}.`,
         type: 'maintenance',
         isPush: true,
       });
@@ -186,7 +186,7 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     const target = get().serviceRequests.find((r) => r.id === requestId);
     const newStatus: ServiceStatus = action === 'ACCEPTED' ? 'Accepted' : 'Rejected';
     const now = new Date().toLocaleString();
-    const phoneToSave = techPhone || target?.assignedTechnicianPhone || '0754 000 111';
+    const phoneToSave = techPhone || target?.assignedTechnicianPhone || '';
 
     const patch = {
       techResponseStatus: action,
@@ -214,10 +214,10 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
         title: isAcc ? `✅ Fundi Amekubali Huduma #${target.requestNumber}` : `❌ Fundi Amekataa Huduma #${target.requestNumber}`,
         titleSw: isAcc ? `✅ Fundi Amekubali Huduma #${target.requestNumber}` : `❌ Fundi Amekataa Huduma #${target.requestNumber}`,
         message: isAcc
-          ? `Mhandisi ${target.assignedTechnician} (Simu: ${phoneToSave}) amekubali ombi la ufungaji #${target.requestNumber}.`
+          ? `Mhandisi ${target.assignedTechnician}${phoneToSave ? ` (Simu: ${phoneToSave})` : ''} amekubali ombi la ufungaji #${target.requestNumber}.`
           : `Mhandisi ${target.assignedTechnician} amekataa ombi la ufungaji #${target.requestNumber}.`,
         messageSw: isAcc
-          ? `Mhandisi ${target.assignedTechnician} (Simu: ${phoneToSave}) amekubali ombi la ufungaji #${target.requestNumber}.`
+          ? `Mhandisi ${target.assignedTechnician}${phoneToSave ? ` (Simu: ${phoneToSave})` : ''} amekubali ombi la ufungaji #${target.requestNumber}.`
           : `Mhandisi ${target.assignedTechnician} amekataa ombi la ufungaji #${target.requestNumber}.`,
         type: 'maintenance',
         isPush: true,
@@ -243,14 +243,14 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     }
 
     if (target) {
-      const techPhone = target.assignedTechnicianPhone || '0754 000 111';
+      const techPhone = target.assignedTechnicianPhone || '';
       const isCompleted = (status as string) === 'Completed' || (status as string) === 'Imekamilika';
       const notifTitle = isCompleted
         ? `✅ KAZI IMEKAMILIKA! Huduma #${target.requestNumber}`
         : `🔄 Maendeleo ya Ufungaji: Huduma #${target.requestNumber}`;
       const notifMsg = isCompleted
-        ? `TAARIFA KWA ADMIN & CLIENT: Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) ameweka kazi ya ufungaji #${target.requestNumber} kuwa IMEKAMILIKA! Mteja: ${target.customerName}. Field Notes: ${techNotes || 'Kazi imekamilika kikamilifu.'}`
-        : `Fundi ${target.assignedTechnician || 'Mhandisi'} (Simu: ${techPhone}) amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea vyema.'}`;
+        ? `TAARIFA: Fundi ${target.assignedTechnician || 'Mhandisi'}${techPhone ? ` (Simu: ${techPhone})` : ''} ameweka kazi ya ufungaji #${target.requestNumber} kuwa IMEKAMILIKA! Mteja: ${target.customerName}. Field Notes: ${techNotes || 'Kazi imekamilika.'}`
+        : `Fundi ${target.assignedTechnician || 'Mhandisi'}${techPhone ? ` (Simu: ${techPhone})` : ''} amesasisha hali: ${status}. Ripoti: ${techNotes || 'Kazi inaendelea.'}`;
 
       useNotificationStore.getState().addNotification({
         title: notifTitle,

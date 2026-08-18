@@ -20,7 +20,17 @@ export const defaultCompanySettings: CompanySettings = {
   emergencyPhone: '+255 754 000 111',
   workingHours: '24/7 Customer Support | Mon - Sat: 08:00 - 18:00',
   hqAddress: 'Mikocheni B, Sayansi / Kijitonyama, Dar es Salaam',
-  socialLinks: SOCIAL_MEDIA_CONFIG,
+  socialLinks: {
+    facebook: '',
+    instagram: '',
+    x: '',
+    linkedin: '',
+    youtube: '',
+    tiktok: '',
+    whatsapp: '',
+    telegram: '',
+    github: '',
+  },
 };
 
 interface CompanySettingsState {
@@ -32,7 +42,7 @@ interface CompanySettingsState {
   updateSettings: (newSettings: Partial<CompanySettings>) => Promise<void>;
 }
 
-const LOCAL_STORAGE_KEY = 'yma_company_settings_v2';
+const LOCAL_STORAGE_KEY = 'yma_company_settings_v3';
 
 const loadCompanySettingsFromLocal = (): CompanySettings => {
   try {
@@ -71,15 +81,24 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
       settingsDocRef,
       (snapshot) => {
         if (snapshot.exists()) {
-          const data = snapshot.data() as CompanySettings;
-          const merged = { ...defaultCompanySettings, ...data };
+          const remoteData = snapshot.data() as CompanySettings;
+          const merged: CompanySettings = {
+            companyName: remoteData.companyName !== undefined ? remoteData.companyName : defaultCompanySettings.companyName,
+            companyPhone: remoteData.companyPhone !== undefined ? remoteData.companyPhone : '',
+            companyEmail: remoteData.companyEmail !== undefined ? remoteData.companyEmail : '',
+            emergencyPhone: remoteData.emergencyPhone !== undefined ? remoteData.emergencyPhone : '',
+            workingHours: remoteData.workingHours !== undefined ? remoteData.workingHours : '',
+            hqAddress: remoteData.hqAddress !== undefined ? remoteData.hqAddress : '',
+            socialLinks: remoteData.socialLinks || {},
+          };
           saveCompanySettingsToLocal(merged);
           set({ settings: merged, isLoading: false });
         } else {
-          // Initialize in firestore with local settings
+          // If not in Firestore yet, write current local/default settings
           const currentLocal = get().settings;
-          setDoc(settingsDocRef, currentLocal).catch((err) =>
-            console.error('Error seeding company settings:', err)
+          const cleanDoc = JSON.parse(JSON.stringify(currentLocal));
+          setDoc(settingsDocRef, cleanDoc).catch((err) =>
+            console.error('Error seeding company settings to Firestore:', err)
           );
           saveCompanySettingsToLocal(currentLocal);
           set({ isLoading: false });
@@ -93,13 +112,22 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
   },
 
   updateSettings: async (newSettings) => {
-    const updated = { ...get().settings, ...newSettings };
+    const current = get().settings;
+    const updated: CompanySettings = {
+      ...current,
+      ...newSettings,
+      socialLinks: {
+        ...(current.socialLinks || {}),
+        ...(newSettings.socialLinks || {}),
+      },
+    };
     saveCompanySettingsToLocal(updated);
     set({ settings: updated });
 
     try {
       const settingsDocRef = doc(db, 'settings', 'company');
-      await setDoc(settingsDocRef, updated, { merge: true });
+      const cleanDoc = JSON.parse(JSON.stringify(updated));
+      await setDoc(settingsDocRef, cleanDoc);
     } catch (err) {
       console.error('Error updating company settings in Firestore:', err);
     }

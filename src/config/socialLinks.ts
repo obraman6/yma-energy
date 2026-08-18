@@ -116,9 +116,15 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
  * Returns active social platforms (filtering out empty or missing URLs)
  */
 export const getActiveSocialPlatforms = (overrideConfig?: Record<string, string>): SocialPlatformConfig[] => {
-  const currentConfig = overrideConfig || SOCIAL_MEDIA_CONFIG;
+  if (overrideConfig) {
+    return SOCIAL_PLATFORMS.map((platform) => ({
+      ...platform,
+      url: (overrideConfig[platform.id] || '').trim(),
+    })).filter((platform) => platform.url.length > 0);
+  }
+
   return SOCIAL_PLATFORMS.map((platform) => ({
     ...platform,
-    url: currentConfig[platform.id] ?? platform.url ?? '',
-  })).filter((platform) => platform.url && platform.url.trim().length > 0);
+    url: (SOCIAL_MEDIA_CONFIG[platform.id] || '').trim(),
+  })).filter((platform) => platform.url.length > 0);
 };

@@ -44,45 +44,46 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
   const [activeTab, setActiveTab] = useState<'pending' | 'active' | 'completed'>('pending');
   const [techNoteInputs, setTechNoteInputs] = useState<Record<string, string>>({});
 
-  // Filter service requests and repair requests assigned to this technician
-  // Or if none matches specifically, display all dispatched jobs for demonstration if user is testing
+  // Filter service requests and repair requests strictly assigned to this technician
   const assignedServiceRequests = useMemo(() => {
     if (!user) return [];
+    const cleanUserName = (user.name || '').trim().toLowerCase();
+    const cleanUserEmail = (user.email || '').trim().toLowerCase();
+    const userId = user.id || '';
+
     return serviceRequests.filter((s) => {
-      if (!s.assignedTechnician) return false;
-      const cleanAssigned = s.assignedTechnician.toLowerCase();
-      const cleanUserName = user.name.toLowerCase();
-      const cleanUserEmail = user.email.toLowerCase();
-      return (
-        s.assignedTechnicianId === user.id ||
-        (s.assignedTechnicianEmail && s.assignedTechnicianEmail.toLowerCase() === cleanUserEmail) ||
-        cleanAssigned.includes(cleanUserName) ||
-        cleanUserName.includes(cleanAssigned) ||
-        s.status === 'Technician Dispatched' ||
-        s.status === 'Accepted' ||
-        s.status === 'En-Route' ||
-        s.status === 'On-Site'
-      );
+      if (!s.assignedTechnician && !s.assignedTechnicianId && !s.assignedTechnicianEmail) return false;
+      const cleanAssigned = (s.assignedTechnician || '').trim().toLowerCase();
+      const cleanAssignedEmail = (s.assignedTechnicianEmail || '').trim().toLowerCase();
+      const assignedId = s.assignedTechnicianId || '';
+
+      const isDirectMatch =
+        (userId && assignedId === userId) ||
+        (cleanUserEmail && cleanAssignedEmail === cleanUserEmail) ||
+        (cleanUserName && cleanAssigned && (cleanAssigned === cleanUserName || cleanAssigned.includes(cleanUserName)));
+
+      return Boolean(isDirectMatch);
     });
   }, [serviceRequests, user]);
 
   const assignedRepairRequests = useMemo(() => {
     if (!user) return [];
+    const cleanUserName = (user.name || '').trim().toLowerCase();
+    const cleanUserEmail = (user.email || '').trim().toLowerCase();
+    const userId = user.id || '';
+
     return repairRequests.filter((r) => {
-      if (!r.assignedTechnician) return false;
-      const cleanAssigned = r.assignedTechnician.toLowerCase();
-      const cleanUserName = user.name.toLowerCase();
-      const cleanUserEmail = user.email.toLowerCase();
-      return (
-        r.assignedTechnicianId === user.id ||
-        (r.assignedTechnicianEmail && r.assignedTechnicianEmail.toLowerCase() === cleanUserEmail) ||
-        cleanAssigned.includes(cleanUserName) ||
-        cleanUserName.includes(cleanAssigned) ||
-        r.status === 'Technician Dispatched' ||
-        r.status === 'Accepted' ||
-        r.status === 'En-Route' ||
-        r.status === 'On-Site'
-      );
+      if (!r.assignedTechnician && !r.assignedTechnicianId && !r.assignedTechnicianEmail) return false;
+      const cleanAssigned = (r.assignedTechnician || '').trim().toLowerCase();
+      const cleanAssignedEmail = (r.assignedTechnicianEmail || '').trim().toLowerCase();
+      const assignedId = r.assignedTechnicianId || '';
+
+      const isDirectMatch =
+        (userId && assignedId === userId) ||
+        (cleanUserEmail && cleanAssignedEmail === cleanUserEmail) ||
+        (cleanUserName && cleanAssigned && (cleanAssigned === cleanUserName || cleanAssigned.includes(cleanUserName)));
+
+      return Boolean(isDirectMatch);
     });
   }, [repairRequests, user]);
 
@@ -123,7 +124,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
 
   const handleRespondService = async (requestId: string, action: 'ACCEPTED' | 'REJECTED') => {
     const note = techNoteInputs[requestId] || '';
-    const techPhone = user?.phone || '0754 000 111';
+    const techPhone = user?.phone || '';
     await respondToServiceAssignment(requestId, action, note, techPhone);
     showToast({
       title: action === 'ACCEPTED' ? 'Kazi Imekubaliwa! 🛠️' : 'Kazi Imekataliwa ❌',
@@ -137,7 +138,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
 
   const handleRespondRepair = async (ticketId: string, action: 'ACCEPTED' | 'REJECTED') => {
     const note = techNoteInputs[ticketId] || '';
-    const techPhone = user?.phone || '0754 000 111';
+    const techPhone = user?.phone || '';
     await respondToRepairAssignment(ticketId, action, note, techPhone);
     showToast({
       title: action === 'ACCEPTED' ? 'Kazi ya Dharura Imekubaliwa! 🚨' : 'Kazi Imekataliwa ❌',

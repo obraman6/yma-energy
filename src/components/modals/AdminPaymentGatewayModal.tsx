@@ -40,7 +40,7 @@ export const AdminPaymentGatewayModal: React.FC<AdminPaymentGatewayModalProps> =
       setNameSw('');
       setType('mobile_money');
       setAccountNumber('');
-      setAccountName('YMA ENERGY GROUP');
+      setAccountName('');
       setInstructions('');
       setInstructionsSw('');
       setBadge('');

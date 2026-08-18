@@ -275,11 +275,9 @@ function MainAppContent() {
               ))}
           </main>
 
-          {/* Full-width Responsive Footer: Visible on website across pages, but in standalone App mode only visible on Contact Us */}
-          {(!isStandaloneApp || activeTab === 'contact') &&
-            activeTab !== 'admin' &&
-            activeTab !== 'technician' && (
-              <Footer setActiveTab={setActiveTab} />
+          {/* Full-width Responsive Footer: Visible across all customer views */}
+          {activeTab !== 'admin' && activeTab !== 'technician' && (
+            <Footer setActiveTab={setActiveTab} />
           )}
 
           {/* Bottom Navigation for Mobile & Tablet */}

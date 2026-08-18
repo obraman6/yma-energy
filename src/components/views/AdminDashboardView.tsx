@@ -124,15 +124,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setEditingWorkingHours(companySettings.workingHours || '');
       setEditingHqAddress(companySettings.hqAddress || '');
       setEditingSocialLinks({
-        facebook: companySettings.socialLinks?.facebook ?? SOCIAL_MEDIA_CONFIG.facebook,
-        instagram: companySettings.socialLinks?.instagram ?? SOCIAL_MEDIA_CONFIG.instagram,
-        x: companySettings.socialLinks?.x ?? SOCIAL_MEDIA_CONFIG.x,
-        linkedin: companySettings.socialLinks?.linkedin ?? SOCIAL_MEDIA_CONFIG.linkedin,
-        youtube: companySettings.socialLinks?.youtube ?? SOCIAL_MEDIA_CONFIG.youtube,
-        tiktok: companySettings.socialLinks?.tiktok ?? SOCIAL_MEDIA_CONFIG.tiktok,
-        whatsapp: companySettings.socialLinks?.whatsapp ?? SOCIAL_MEDIA_CONFIG.whatsapp,
-        telegram: companySettings.socialLinks?.telegram ?? SOCIAL_MEDIA_CONFIG.telegram,
-        github: companySettings.socialLinks?.github ?? SOCIAL_MEDIA_CONFIG.github,
+        facebook: companySettings.socialLinks?.facebook ?? '',
+        instagram: companySettings.socialLinks?.instagram ?? '',
+        x: companySettings.socialLinks?.x ?? '',
+        linkedin: companySettings.socialLinks?.linkedin ?? '',
+        youtube: companySettings.socialLinks?.youtube ?? '',
+        tiktok: companySettings.socialLinks?.tiktok ?? '',
+        whatsapp: companySettings.socialLinks?.whatsapp ?? '',
+        telegram: companySettings.socialLinks?.telegram ?? '',
+        github: companySettings.socialLinks?.github ?? '',
       });
     }
   }, [companySettings]);
@@ -516,13 +516,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {/* SUB-TAB 1: CATALOG & INVENTORY */}
       {activeAdminTab === 'inventory' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               Hardware Catalog Management
             </h2>
             <button
               onClick={onOpenAddProductModal}
-              className="px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md"
             >
               <Plus className="w-4 h-4" />
               <span>Add New Solar Product</span>
@@ -704,7 +704,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         <div className="space-y-6">
           {/* Section A: Managed Solar Services */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                   <Wrench className="w-5 h-5 text-amber-500" />
@@ -714,7 +714,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               </div>
               <button
                 onClick={onOpenAddServiceModal}
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 <span>Ongeza Huduma Mpya</span>
@@ -959,10 +959,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setEditingSocialLinks(SOCIAL_MEDIA_CONFIG)}
-                    className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                    onClick={() =>
+                      setEditingSocialLinks({
+                        facebook: '',
+                        instagram: '',
+                        x: '',
+                        linkedin: '',
+                        youtube: '',
+                        tiktok: '',
+                        whatsapp: '',
+                        telegram: '',
+                        github: '',
+                      })
+                    }
+                    className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20"
                   >
-                    Weka Links za Mfano (Reset)
+                    Futa Links Zote (Clear All)
                   </button>
                 </div>
 
@@ -1129,7 +1141,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {/* SUB-TAB 4: PAYMENT GATEWAYS CONFIGURATION */}
       {activeAdminTab === 'gateways' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-amber-500" />
@@ -1139,13 +1151,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 {t('paymentGatewaysSub', 'Weka au hariri Lipa Namba za M-Pesa, Tigo Pesa, Airtel Money, Akaunti za Benki au Kadi.')}
               </p>
             </div>
-
             <button
               onClick={() => {
                 setSelectedGatewayToEdit(null);
                 setIsGatewayModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>Ongeza Gateway Mpya</span>
@@ -1241,7 +1252,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {/* SUB-TAB: STAFF & USER MANAGEMENT (ROLE CONTROL) */}
       {activeAdminTab === 'users' && (
         <div className="space-y-6">
-          <div className="p-5 rounded-2xl bg-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl bg-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-amber-500" />
@@ -1251,10 +1262,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 Akaunti za Manager na Admin hutengenezwa tu hapa. Umma unaruhusiwa kujisajili kama Customer tu.
               </p>
             </div>
-
             <button
               onClick={() => setIsStaffModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shrink-0"
             >
               <UserPlus className="w-4 h-4" />
               <span>{t('createStaffAccountBtn', 'Tengeneza Akaunti ya Staff')}</span>

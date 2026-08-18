@@ -9,8 +9,7 @@ interface AdminServiceModalProps {
   serviceToEdit?: SolarService | null;
 }
 
-const DEFAULT_SERVICE_IMAGE =
-  'https://images.unsplash.com/photo-1508873696983-2df515122519?auto=format&fit=crop&q=80&w=800';
+const DEFAULT_SERVICE_IMAGE = '';
 
 export const AdminServiceModal: React.FC<AdminServiceModalProps> = ({
   isOpen,
@@ -21,12 +20,12 @@ export const AdminServiceModal: React.FC<AdminServiceModalProps> = ({
 
   const [name, setName] = useState('');
   const [nameSw, setNameSw] = useState('');
-  const [category, setCategory] = useState<'Installation' | 'Audit' | 'Maintenance' | 'Upgrade'>('Installation');
-  const [basePriceTzs, setBasePriceTzs] = useState(250000);
-  const [durationHours, setDurationHours] = useState('4 - 6 Hours');
+  const [category, setCategory] = useState<string>('');
+  const [basePriceTzs, setBasePriceTzs] = useState(0);
+  const [durationHours, setDurationHours] = useState('');
   const [description, setDescription] = useState('');
   const [descriptionSw, setDescriptionSw] = useState('');
-  const [features, setFeatures] = useState<string>('Technical Site Audit, BOQ Report, Warranty Guarantee');
+  const [features, setFeatures] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string>(DEFAULT_SERVICE_IMAGE);
   const [imageFileName, setImageFileName] = useState<string>('');
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
@@ -50,11 +49,11 @@ export const AdminServiceModal: React.FC<AdminServiceModalProps> = ({
       setName('');
       setNameSw('');
       setCategory('Installation');
-      setBasePriceTzs(250000);
-      setDurationHours('4 - 6 Hours');
+      setBasePriceTzs(0);
+      setDurationHours('');
       setDescription('');
       setDescriptionSw('');
-      setFeatures('Technical Site Audit, BOQ Report, Warranty Guarantee');
+      setFeatures('');
       setImageUrl(DEFAULT_SERVICE_IMAGE);
       setImageFileName('');
       setUploadError(null);
@@ -94,7 +93,7 @@ export const AdminServiceModal: React.FC<AdminServiceModalProps> = ({
       .map((f) => f.trim())
       .filter((f) => f.length > 0);
 
-    const finalImage = imageUrl.trim() || DEFAULT_SERVICE_IMAGE;
+    const finalImage = imageUrl.trim() || '';
 
     if (serviceToEdit) {
       await editService(serviceToEdit.id, {
@@ -127,9 +126,9 @@ export const AdminServiceModal: React.FC<AdminServiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-6">
-        <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg max-h-[95vh] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="p-4 sm:p-5 shrink-0 bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
               <Wrench className="w-5 h-5" />
@@ -148,7 +147,7 @@ export const AdminServiceModal: React.FC<AdminServiceModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto">
           {/* Service Name English */}
           <div>
             <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
@@ -178,19 +177,17 @@ export const AdminServiceModal: React.FC<AdminServiceModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Aina / Category</label>
-              <select
+              <input
+                type="text"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="mfano: Installation, Audit, Maintenance..."
                 className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
-              >
-                <option value="Installation">Installation (Ufungaji)</option>
-                <option value="Audit">Audit (Uchunguzi wa Kiufundi)</option>
-                <option value="Maintenance">Maintenance (Ukarabati & Matengenezo)</option>
-                <option value="Upgrade">Upgrade (Kuboresha Mfumo)</option>
-              </select>
+                required
+              />
             </div>
 
             <div>
@@ -362,23 +359,25 @@ export const AdminServiceModal: React.FC<AdminServiceModalProps> = ({
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all mt-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Inahifadhi Huduma...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span>{serviceToEdit ? 'Hifadhi Mabadiliko ya Huduma' : 'Ongeza Huduma Upya'}</span>
-              </>
-            )}
-          </button>
+          <div className="shrink-0 pt-2 pb-2 mt-2 sticky bottom-0 bg-white dark:bg-slate-900">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Inahifadhi Huduma...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>{serviceToEdit ? 'Hifadhi Mabadiliko ya Huduma' : 'Ongeza Huduma Upya'}</span>
+                </>
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </div>

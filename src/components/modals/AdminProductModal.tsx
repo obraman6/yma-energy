@@ -20,12 +20,12 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ProductCategory>('Solar Panels');
-  const [priceTzs, setPriceTzs] = useState(350000);
-  const [stock, setStock] = useState(25);
-  const [lowStockThreshold, setLowStockThreshold] = useState(5);
+  const [priceTzs, setPriceTzs] = useState(0);
+  const [stock, setStock] = useState(0);
+  const [lowStockThreshold, setLowStockThreshold] = useState(0);
   const [specifications, setSpecifications] = useState('');
   const [description, setDescription] = useState('');
-  const [warrantyPeriod, setWarrantyPeriod] = useState('25 Years Performance Warranty');
+  const [warrantyPeriod, setWarrantyPeriod] = useState('');
   
   // Image state
   const [imageUrl, setImageUrl] = useState('');
@@ -47,13 +47,13 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
     } else {
       setName('');
       setCategory('Solar Panels');
-      setPriceTzs(450000);
-      setStock(20);
-      setLowStockThreshold(5);
-      setSpecifications('Monocrystalline Grade-A Cell, 25-Year Performance Guarantee');
-      setDescription('High efficiency Tier-1 certified solar component manufactured for Tropical East African climate resilience.');
-      setWarrantyPeriod('25 Years Performance Warranty');
-      setImageUrl('https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&q=80&w=800');
+      setPriceTzs(0);
+      setStock(0);
+      setLowStockThreshold(0);
+      setSpecifications('');
+      setDescription('');
+      setWarrantyPeriod('');
+      setImageUrl('');
       setImageFileName('');
     }
   }, [productToEdit, isOpen]);
@@ -84,9 +84,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
     e.preventDefault();
     if (!name.trim()) return;
 
-    const finalImage =
-      imageUrl ||
-      'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&q=80&w=800';
+    const finalImage = imageUrl || '';
 
     if (productToEdit) {
       editProduct(productToEdit.id, {
@@ -130,9 +128,9 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-6">
-        <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg max-h-[95vh] flex flex-col bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="p-4 sm:p-5 shrink-0 bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
               <ImageIcon className="w-5 h-5" />
@@ -152,7 +150,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto">
           <div>
             <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
               Product Name (Jina la Bidhaa) *
@@ -167,41 +165,20 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Category (Aina ya Bidhaa)
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as ProductCategory)}
-                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold"
-              >
-                <option value="Solar Panels">Solar Panels</option>
-                <option value="Hybrid Inverters">Hybrid Inverters</option>
-                <option value="Lithium Batteries">Lithium Batteries</option>
-                <option value="Gel Batteries">Gel Batteries</option>
-                <option value="Solar Water Heaters">Solar Water Heaters</option>
-                <option value="Solar Pumps">Solar Pumps</option>
-                <option value="Accessories">Accessories</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                Price TZS (Bei kwa Shilingi) *
-              </label>
-              <input
-                type="number"
-                value={priceTzs}
-                onChange={(e) => setPriceTzs(Number(e.target.value))}
-                className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono font-bold"
-                required
-              />
-            </div>
+          <div>
+            <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              Price TZS (Bei kwa Shilingi) *
+            </label>
+            <input
+              type="number"
+              value={priceTzs}
+              onChange={(e) => setPriceTzs(Number(e.target.value))}
+              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono font-bold"
+              required
+            />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 Stock (Idadi) *
@@ -286,11 +263,6 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                   src={imageUrl}
                   alt="Product preview"
                   className="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-800 shrink-0"
-                  onError={(e) => {
-                    // Fallback preview
-                    (e.target as HTMLImageElement).src =
-                      'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&q=80&w=800';
-                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate">
@@ -364,13 +336,15 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>{productToEdit ? 'Hifadhi Mabadiliko (Save Changes)' : 'Ongeza Bidhaa (Create Product)'}</span>
-          </button>
+          <div className="shrink-0 pt-2 pb-2 mt-2 sticky bottom-0 bg-white dark:bg-slate-900">
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{productToEdit ? 'Hifadhi Mabadiliko (Save Changes)' : 'Ongeza Bidhaa (Create Product)'}</span>
+            </button>
+          </div>
         </form>
       </div>
     </div>
