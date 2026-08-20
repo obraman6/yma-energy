@@ -1,6 +1,6 @@
 export type Language = 'en' | 'sw';
 export type ThemeMode = 'light' | 'dark';
-export type UserRole = 'SUPER_ADMIN' | 'STAFF_ADMIN' | 'ADMIN' | 'MANAGER' | 'TECHNICIAN' | 'CUSTOMER';
+export type UserRole = 'SUPER_ADMIN' | 'STAFF_ADMIN' | 'ADMIN' | 'MANAGER' | 'TECHNICIAN' | 'DRIVER' | 'CUSTOMER';
 
 export interface User {
   id: string;

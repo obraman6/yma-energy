@@ -148,31 +148,39 @@ export const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
             </h3>
             
             <div className="space-y-1.5 text-slate-300">
-              <a
-                href={`tel:${settings.companyPhone.replace(/\s+/g, '')}`}
-                className="flex items-center gap-2 hover:text-amber-400 transition-colors"
-              >
-                <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span className="font-mono font-bold text-white">{settings.companyPhone}</span>
-              </a>
+              {settings.companyPhone && (
+                <a
+                  href={`tel:${settings.companyPhone.replace(/\s+/g, '')}`}
+                  className="flex items-center gap-2 hover:text-amber-400 transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="font-mono font-bold text-white">{settings.companyPhone}</span>
+                </a>
+              )}
 
-              <a
-                href={`mailto:${settings.companyEmail}`}
-                className="flex items-center gap-2 hover:text-amber-400 transition-colors"
-              >
-                <Mail className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span className="font-mono text-slate-300 truncate">{settings.companyEmail}</span>
-              </a>
+              {settings.companyEmail && (
+                <a
+                  href={`mailto:${settings.companyEmail}`}
+                  className="flex items-center gap-2 hover:text-amber-400 transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <span className="font-mono text-slate-300 truncate">{settings.companyEmail}</span>
+                </a>
+              )}
 
-              <div className="flex items-start gap-2 text-slate-400">
-                <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                <span className="line-clamp-1">{settings.hqAddress}</span>
-              </div>
+              {settings.hqAddress && (
+                <div className="flex items-start gap-2 text-slate-400">
+                  <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                  <span className="line-clamp-1">{settings.hqAddress}</span>
+                </div>
+              )}
 
-              <div className="flex items-center gap-1.5 text-emerald-400 font-medium pt-0.5">
-                <Clock className="w-3 h-3" />
-                <span>{settings.workingHours}</span>
-              </div>
+              {settings.workingHours && (
+                <div className="flex items-center gap-1.5 text-emerald-400 font-medium pt-0.5">
+                  <Clock className="w-3 h-3" />
+                  <span>{settings.workingHours}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

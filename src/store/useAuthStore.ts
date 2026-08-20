@@ -9,7 +9,7 @@ import {
   sendPasswordResetEmail,
   signOut,
 } from 'firebase/auth';
-import { collection, onSnapshot, doc, getDoc, setDoc, updateDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
 
 interface AuthResult {
   success: boolean;
@@ -27,6 +27,8 @@ interface AuthState {
   login: (email: string, password?: string) => Promise<AuthResult>;
   register: (name: string, email: string, phone: string, password?: string) => Promise<AuthResult>;
   createStaffUser: (name: string, email: string, phone: string, role: UserRole, password?: string) => Promise<AuthResult>;
+  deleteUserAccount: (userId: string) => Promise<void>;
+  updateUserRole: (userId: string, newRole: UserRole) => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (updated: Partial<User>) => Promise<void>;
@@ -294,6 +296,33 @@ export const useAuthStore = create<AuthState>()(
         success: false,
         message: 'Imefeli kuhifadhi akaunti ya Staff kwenye database.',
       };
+    }
+  },
+
+  deleteUserAccount: async (userId: string) => {
+    set((state) => ({
+      users: state.users.filter((u) => u.id !== userId && u.uid !== userId),
+    }));
+
+    try {
+      await deleteDoc(doc(db, 'users', userId));
+    } catch (err) {
+      console.error('Error deleting user account from Firestore:', err);
+    }
+  },
+
+  updateUserRole: async (userId: string, newRole: UserRole) => {
+    set((state) => ({
+      users: state.users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)),
+    }));
+
+    try {
+      await updateDoc(doc(db, 'users', userId), {
+        role: newRole,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('Error updating user role in Firestore:', err);
     }
   },
 

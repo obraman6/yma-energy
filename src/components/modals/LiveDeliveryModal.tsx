@@ -113,7 +113,7 @@ export const LiveDeliveryModal: React.FC<LiveDeliveryModalProps> = ({
           </div>
 
           {/* Map Simulation */}
-          <div className="relative h-44 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 flex items-center justify-center p-4">
+          <div className="relative h-44 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 flex items-center justify-center p-4">
             <div
               className="absolute inset-0 opacity-30 bg-cover bg-center"
               style={{
@@ -124,20 +124,22 @@ export const LiveDeliveryModal: React.FC<LiveDeliveryModalProps> = ({
               <div className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center mx-auto shadow-lg animate-pulse">
                 <Truck className="w-5 h-5" />
               </div>
-              <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                Live Courier En Route to {order.region}
+              <p className="text-xs font-bold text-slate-100">
+                {order.driverName ? `Msafirishaji Yupo Safarini: ${order.region || 'Tanzania'}` : `Uwasilishaji: ${order.region || 'Tanzania'}`}
               </p>
-              <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                ETA: 25 Minutes (Kilimani Road - Mikocheni B)
+              <p className="text-[11px] font-semibold text-amber-400">
+                {order.driverName
+                  ? `Kuelekea: ${order.shippingAddress || order.region}`
+                  : `Inasubiri kupangiwa dereva/msafirishaji kutoka tawi la ${order.region || 'karibu'}`}
               </p>
             </div>
           </div>
 
           {/* Assigned Driver Card */}
           {order.driverName ? (
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between gap-3">
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold flex items-center justify-center text-lg">
+                <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold flex items-center justify-center text-lg shrink-0">
                   <User className="w-6 h-6" />
                 </div>
                 <div>
@@ -145,23 +147,36 @@ export const LiveDeliveryModal: React.FC<LiveDeliveryModalProps> = ({
                     {order.driverName}
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Vehicle: {order.driverVehicle || 'MC 441 DXX (TVS Tricycle)'}
+                    {order.driverVehicle ? `Chombo: ${order.driverVehicle}` : 'Msafirishaji Rasmi wa YMA'}
                   </p>
+                  {order.driverPhone && (
+                    <p className="text-[11px] font-mono text-amber-600 dark:text-amber-400 font-bold">
+                      {order.driverPhone}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <a
-                href={`tel:${order.driverPhone}`}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>Call Driver</span>
-              </a>
+              {order.driverPhone && (
+                <a
+                  href={`tel:${order.driverPhone.replace(/\s+/g, '')}`}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Piga Simu</span>
+                </a>
+              )}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic text-center">
-              Driver will be dispatched once packed at the local branch.
-            </p>
+            <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-1">
+              <Clock className="w-5 h-5 text-amber-500 mx-auto animate-pulse" />
+              <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">
+                Inasubiri Upangaji wa Dereva / Msafirishaji
+              </p>
+              <p className="text-[11px] text-slate-400">
+                Oda inapofungashwa, Admin atapanga dereva halisi na namba yake itaonekana hapa.
+              </p>
+            </div>
           )}
         </div>
       </div>

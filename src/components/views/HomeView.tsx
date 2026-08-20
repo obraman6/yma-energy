@@ -14,6 +14,11 @@ import {
   CheckCircle2,
   Heart,
   ShoppingCart,
+  Youtube,
+  Play,
+  ExternalLink,
+  Settings,
+  Sparkles,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useProductStore } from '../../store/useProductStore';
@@ -21,8 +26,10 @@ import { useWishlistStore } from '../../store/useWishlistStore';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useToastStore } from '../../store/useToastStore';
+import { useCompanySettingsStore } from '../../store/useCompanySettingsStore';
 import { Product, Branch } from '../../types';
 import { ConcentricSpinner } from '../common/ConcentricSpinner';
+import { getYouTubeEmbedUrl, detectVideoAspectRatio } from '../common/HowToUseAppSection';
 import { getStockStatus } from '../../utils/stockUtils';
 
 interface HomeViewProps {
@@ -39,11 +46,33 @@ export const HomeView: React.FC<HomeViewProps> = ({
 }) => {
   const { t, language } = useLanguage();
   const { user } = useAuthStore();
+  const { settings } = useCompanySettingsStore();
   const { products, reviews, setCategory, isLoading } = useProductStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const addToCart = useCartStore((s) => s.addToCart);
 
   const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({});
+
+  const isStaffOrAdmin =
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role === 'ADMIN' ||
+    user?.role === 'STAFF_ADMIN' ||
+    user?.role === 'MANAGER';
+
+  const rawVideoUrl = settings.tutorialVideoUrl?.trim() || '';
+  const embedUrl = getYouTubeEmbedUrl(rawVideoUrl);
+
+  const videoTitle =
+    settings.tutorialVideoTitle?.trim() ||
+    (language === 'sw'
+      ? 'Jinsi ya Kutumia App ya YMA ENERGY GROUP'
+      : 'How to Use YMA ENERGY GROUP App');
+
+  const videoDesc =
+    settings.tutorialVideoDesc?.trim() ||
+    (language === 'sw'
+      ? 'Tazama video fupi ya hatua kwa hatua kujifunza jinsi ya kuagiza bidhaa za sola, kuomba fundi wa ufungaji, na kufuatilia oda yako.'
+      : 'Watch this quick step-by-step tutorial to learn how to purchase solar hardware, request certified installation, and track deliveries.');
 
   const checkAuth = () => {
     if (!user) {
@@ -78,12 +107,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-5 pb-8">
-      {/* Compact Hero Banner Section */}
-      <section className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-amber-950 to-slate-900 text-white p-3.5 sm:p-5 lg:p-6 border border-slate-800 shadow-md">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-60 h-60 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+      {/* Hello / Hero Banner Section with Integrated YouTube Tutorial Video */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950 text-white p-4 sm:p-5 lg:p-6 border border-slate-800 shadow-xl space-y-4">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 max-w-2xl space-y-2">
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+        {/* Hello Banner Header Content */}
+        <div className="relative z-10 max-w-3xl space-y-2">
+          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-extrabold border border-amber-500/30">
             <Sun className="w-3 h-3 text-amber-400 animate-spin" />
             <span>{t('brandName')}</span>
           </div>
@@ -92,14 +122,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {t('heroTitle')}
           </h1>
 
-          <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed max-w-xl">
+          <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed max-w-2xl">
             {t('heroSubtitle')}
           </p>
 
           <div className="flex flex-wrap items-center gap-2 pt-0.5">
             <button
               onClick={() => setActiveTab('shop')}
-              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[11px] sm:text-xs shadow-sm flex items-center gap-1.5 transition-all hover:scale-[1.01]"
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[11px] sm:text-xs shadow-md flex items-center gap-1.5 transition-all hover:scale-[1.01] active:scale-95"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>{t('heroCtaShop')}</span>
@@ -107,13 +137,79 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             <button
               onClick={() => setActiveTab('services')}
-              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white font-extrabold text-[11px] sm:text-xs border border-white/20 backdrop-blur-md flex items-center gap-1.5 transition-all hover:scale-[1.01]"
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-extrabold text-[11px] sm:text-xs border border-white/20 backdrop-blur-md flex items-center gap-1.5 transition-all hover:scale-[1.01] active:scale-95"
             >
               <Wrench className="w-3.5 h-3.5 text-sky-400" />
               <span>{t('quickActionServices')}</span>
             </button>
           </div>
         </div>
+
+        {/* Integrated YouTube Tutorial Video inside Hello Section - ONLY visible if admin configured a valid link */}
+        {embedUrl && (() => {
+          const videoRatio = detectVideoAspectRatio(rawVideoUrl, settings.tutorialVideoAspectRatio);
+          return (
+            <div className="relative z-10 pt-3 border-t border-white/10 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 text-[10px] font-extrabold border border-rose-500/30">
+                    <Youtube className="w-3 h-3 text-rose-400" />
+                    <span>{language === 'sw' ? 'Mwongozo wa App' : 'Video Tutorial'}</span>
+                  </span>
+                  <h2 className="text-xs sm:text-sm font-bold text-white tracking-tight truncate max-w-md">
+                    {videoTitle}
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {rawVideoUrl && (
+                    <a
+                      href={rawVideoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-rose-400 hover:text-rose-300 font-bold"
+                    >
+                      <span>YouTube</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                  {isStaffOrAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('admin')}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 hover:bg-amber-500 text-white font-bold text-[10px] border border-white/15 transition-colors"
+                      title="Badilisha video na umbile lake kwenye Admin Dashboard"
+                    >
+                      <Settings className="w-2.5 h-2.5 text-amber-300" />
+                      <span>Admin</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Dynamic Responsive Video Frame matching source ratio (Vertical 9:16, Square 1:1, or Landscape 16:9) */}
+              <div className="flex justify-center w-full py-1">
+                <div
+                  className={`relative overflow-hidden bg-black transition-all duration-300 ${
+                    videoRatio === '9:16'
+                      ? 'aspect-[9/16] w-full max-w-[260px] sm:max-w-[290px] rounded-2xl border-2 border-white/20 shadow-2xl ring-2 ring-rose-500/20'
+                      : videoRatio === '1:1'
+                      ? 'aspect-square w-full max-w-[300px] sm:max-w-[350px] rounded-2xl border-2 border-white/20 shadow-xl'
+                      : 'aspect-video w-full max-w-xl rounded-xl border border-white/15 shadow-md'
+                  }`}
+                >
+                  <iframe
+                    src={embedUrl}
+                    title={videoTitle}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </section>
 
       {/* Quick Action Grid */}

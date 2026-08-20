@@ -1008,23 +1008,27 @@ export const AccountView: React.FC<AccountViewProps> = ({
                 <MessageSquare className="w-4 h-4 text-amber-500" />
               </button>
 
-              <a
-                href={`https://wa.me/${settings.companyPhone.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full p-3 rounded-xl bg-emerald-600 text-white flex items-center justify-between font-bold"
-              >
-                <span>{t('whatsappUs')} ({settings.companyPhone})</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
+              {settings.companyPhone ? (
+                <>
+                  <a
+                    href={`https://wa.me/${settings.companyPhone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full p-3 rounded-xl bg-emerald-600 text-white flex items-center justify-between font-bold"
+                  >
+                    <span>{t('whatsappUs')} ({settings.companyPhone})</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
 
-              <a
-                href={`tel:${settings.companyPhone.replace(/\s+/g, '')}`}
-                className="w-full p-3 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-between font-bold"
-              >
-                <span>{t('callUs')} ({settings.companyPhone})</span>
-                <Phone className="w-4 h-4" />
-              </a>
+                  <a
+                    href={`tel:${settings.companyPhone.replace(/\s+/g, '')}`}
+                    className="w-full p-3 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 flex items-center justify-between font-bold"
+                  >
+                    <span>{t('callUs')} ({settings.companyPhone})</span>
+                    <Phone className="w-4 h-4" />
+                  </a>
+                </>
+              ) : null}
             </div>
           )}
         </div>

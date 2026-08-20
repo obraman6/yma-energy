@@ -10,7 +10,7 @@ export interface EmailTriggerPayload {
 
 export async function sendAdminEmailTrigger(payload: EmailTriggerPayload): Promise<boolean> {
   try {
-    const configuredEmail = useCompanySettingsStore.getState().settings?.companyEmail || 'support@ymaenergy.co.tz';
+    const configuredEmail = useCompanySettingsStore.getState().settings?.companyEmail || '';
     const recipientEmail = payload.targetEmail || configuredEmail;
 
     // 1. Call Backend API trigger
@@ -47,7 +47,7 @@ export async function sendAdminEmailTrigger(payload: EmailTriggerPayload): Promi
     return result?.success ?? true;
   } catch (error) {
     console.error('Failed to dispatch email trigger API:', error);
-    const configuredEmail = useCompanySettingsStore.getState().settings?.companyEmail || 'support@ymaenergy.co.tz';
+    const configuredEmail = useCompanySettingsStore.getState().settings?.companyEmail || '';
     // Fallback log to Firestore directly
     try {
       const notificationId = `eml_fallback_${Date.now()}`;

@@ -14,15 +14,15 @@ export interface SocialPlatformConfig {
  * You can modify these URLs here or pass empty string '' to automatically hide an icon.
  */
 export const SOCIAL_MEDIA_CONFIG: Record<string, string> = {
-  facebook: 'https://facebook.com/yourpage',
-  instagram: 'https://instagram.com/yourpage',
-  x: 'https://x.com/yourpage',
-  linkedin: 'https://linkedin.com/company/yourpage',
-  youtube: 'https://youtube.com/@yourchannel',
-  tiktok: 'https://tiktok.com/@yourpage',
-  whatsapp: 'https://wa.me/255700000000',
-  telegram: 'https://t.me/yourpage',
-  github: 'https://github.com/yourusername',
+  facebook: '',
+  instagram: '',
+  x: '',
+  linkedin: '',
+  youtube: '',
+  tiktok: '',
+  whatsapp: '',
+  telegram: '',
+  github: '',
 };
 
 /**
@@ -32,7 +32,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'facebook',
     name: 'Facebook',
-    url: SOCIAL_MEDIA_CONFIG.facebook,
+    url: '',
     path: 'M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z',
     color: '#1877F2',
     bgHover: 'hover:bg-[#1877F2]',
@@ -41,7 +41,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'instagram',
     name: 'Instagram',
-    url: SOCIAL_MEDIA_CONFIG.instagram,
+    url: '',
     path: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z',
     color: '#E4405F',
     bgHover: 'hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888]',
@@ -50,7 +50,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'x',
     name: 'X (Twitter)',
-    url: SOCIAL_MEDIA_CONFIG.x,
+    url: '',
     path: 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z',
     color: '#1DA1F2',
     bgHover: 'hover:bg-slate-950 dark:hover:bg-slate-100 dark:hover:text-slate-950',
@@ -59,7 +59,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'linkedin',
     name: 'LinkedIn',
-    url: SOCIAL_MEDIA_CONFIG.linkedin,
+    url: '',
     path: 'M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z',
     color: '#0A66C2',
     bgHover: 'hover:bg-[#0A66C2]',
@@ -68,7 +68,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'youtube',
     name: 'YouTube',
-    url: SOCIAL_MEDIA_CONFIG.youtube,
+    url: '',
     path: 'M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z',
     color: '#FF0000',
     bgHover: 'hover:bg-[#FF0000]',
@@ -77,7 +77,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'tiktok',
     name: 'TikTok',
-    url: SOCIAL_MEDIA_CONFIG.tiktok,
+    url: '',
     path: 'M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 3 15.68 6.33 6.33 0 0 0 9.33 22a6.33 6.33 0 0 0 6.33-6.33V9.05a8.16 8.16 0 0 0 4.67 1.47V7.08a4.86 4.86 0 0 1-.74-.39z',
     color: '#EE1D52',
     bgHover: 'hover:bg-[#000000] hover:text-[#25F4EE]',
@@ -86,7 +86,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'whatsapp',
     name: 'WhatsApp',
-    url: SOCIAL_MEDIA_CONFIG.whatsapp,
+    url: '',
     path: 'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z',
     color: '#25D366',
     bgHover: 'hover:bg-[#25D366]',
@@ -95,7 +95,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'telegram',
     name: 'Telegram',
-    url: SOCIAL_MEDIA_CONFIG.telegram,
+    url: '',
     path: 'M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.141.119.098.152.228.166.331.016.115.032.37.018.571z',
     color: '#229ED9',
     bgHover: 'hover:bg-[#229ED9]',
@@ -104,7 +104,7 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
   {
     id: 'github',
     name: 'GitHub',
-    url: SOCIAL_MEDIA_CONFIG.github,
+    url: '',
     path: 'M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z',
     color: '#6e5494',
     bgHover: 'hover:bg-[#24292e]',
@@ -113,18 +113,21 @@ export const SOCIAL_PLATFORMS: SocialPlatformConfig[] = [
 ];
 
 /**
- * Returns active social platforms (filtering out empty or missing URLs)
+ * Returns active social platforms (filtering out empty, disabled, or missing URLs)
  */
 export const getActiveSocialPlatforms = (overrideConfig?: Record<string, string>): SocialPlatformConfig[] => {
-  if (overrideConfig) {
-    return SOCIAL_PLATFORMS.map((platform) => ({
-      ...platform,
-      url: (overrideConfig[platform.id] || '').trim(),
-    })).filter((platform) => platform.url.length > 0);
-  }
-
+  const source = overrideConfig !== undefined ? overrideConfig : SOCIAL_MEDIA_CONFIG;
   return SOCIAL_PLATFORMS.map((platform) => ({
     ...platform,
-    url: (SOCIAL_MEDIA_CONFIG[platform.id] || '').trim(),
-  })).filter((platform) => platform.url.length > 0);
+    url: (source[platform.id] || '').trim(),
+  })).filter((platform) => {
+    const u = platform.url;
+    return (
+      u.length > 0 &&
+      !u.includes('yourpage') &&
+      !u.includes('yourchannel') &&
+      !u.includes('yourusername') &&
+      !u.includes('255700000000')
+    );
+  });
 };

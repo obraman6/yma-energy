@@ -39,7 +39,12 @@ import {
   Edit3,
   Share2,
   Globe,
+  Youtube,
+  Video,
+  Play,
+  ExternalLink,
 } from 'lucide-react';
+import { getYouTubeEmbedUrl, detectVideoAspectRatio, VideoAspectRatio } from '../common/HowToUseAppSection';
 import { SOCIAL_PLATFORMS, SOCIAL_MEDIA_CONFIG } from '../../config/socialLinks';
 import { db } from '../../lib/firebase';
 import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
@@ -79,7 +84,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 }) => {
   const { t } = useLanguage();
   const showToast = useToastStore((s) => s.showToast);
-  const { user: currentUser, users, createStaffUser, updateProfile } = useAuthStore();
+  const { user: currentUser, users, createStaffUser, updateProfile, deleteUserAccount, updateUserRole } = useAuthStore();
 
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'ADMIN' || currentUser?.email === 'admin@ymaenergy.com';
   const isStaffAdmin = currentUser?.role === 'STAFF_ADMIN';
@@ -103,6 +108,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [editingEmergencyPhone, setEditingEmergencyPhone] = useState('');
   const [editingWorkingHours, setEditingWorkingHours] = useState('');
   const [editingHqAddress, setEditingHqAddress] = useState('');
+  const [editingTutorialVideoUrl, setEditingTutorialVideoUrl] = useState('');
+  const [editingTutorialVideoTitle, setEditingTutorialVideoTitle] = useState('');
+  const [editingTutorialVideoDesc, setEditingTutorialVideoDesc] = useState('');
+  const [editingTutorialVideoAspectRatio, setEditingTutorialVideoAspectRatio] = useState<'auto' | '16:9' | '9:16' | '1:1'>('auto');
   const [editingSocialLinks, setEditingSocialLinks] = useState<Record<string, string>>({
     facebook: '',
     instagram: '',
@@ -123,6 +132,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setEditingEmergencyPhone(companySettings.emergencyPhone || '');
       setEditingWorkingHours(companySettings.workingHours || '');
       setEditingHqAddress(companySettings.hqAddress || '');
+      setEditingTutorialVideoUrl(companySettings.tutorialVideoUrl || '');
+      setEditingTutorialVideoTitle(companySettings.tutorialVideoTitle || 'Jinsi ya Kutumia App ya YMA ENERGY GROUP');
+      setEditingTutorialVideoDesc(companySettings.tutorialVideoDesc || 'Tazama video fupi kujifunza jinsi ya kununua bidhaa za sola, kuagiza huduma za ufungaji, kuomba fundi wa dharura, na kufuatilia oda yako moja kwa moja.');
+      setEditingTutorialVideoAspectRatio(companySettings.tutorialVideoAspectRatio || 'auto');
       setEditingSocialLinks({
         facebook: companySettings.socialLinks?.facebook ?? '',
         instagram: companySettings.socialLinks?.instagram ?? '',
@@ -147,11 +160,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         emergencyPhone: editingEmergencyPhone,
         workingHours: editingWorkingHours,
         hqAddress: editingHqAddress,
+        tutorialVideoUrl: editingTutorialVideoUrl,
+        tutorialVideoTitle: editingTutorialVideoTitle,
+        tutorialVideoDesc: editingTutorialVideoDesc,
+        tutorialVideoAspectRatio: editingTutorialVideoAspectRatio,
         socialLinks: editingSocialLinks,
       });
       showToast({
-        title: 'Taarifa na Links Zimehifadhiwa! 🌐',
-        message: 'Taarifa za mawasiliano na viungo vya mitandao ya kijamii zimesasishwa kote kwenye mfumo.',
+        title: 'Taarifa na Video Zimehifadhiwa! 🌐',
+        message: 'Taarifa za mawasiliano, video ya YouTube ya mafunzo, na viungo vya mitandao zimesasishwa kote kwenye mfumo.',
         type: 'success',
       });
     } catch (err) {
@@ -664,32 +681,61 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <div>
                     <p className="text-slate-500">Address: {ord.shippingAddress}</p>
                     <p className="text-slate-500">Method: {ord.paymentMethod} ({ord.paymentRef})</p>
+                    {ord.driverName && (
+                      <p className="text-emerald-600 dark:text-emerald-400 font-bold mt-1">
+                        Dereva / Msafirishaji: {ord.driverName} {ord.driverPhone ? `(${ord.driverPhone})` : ''} {ord.driverVehicle ? `• ${ord.driverVehicle}` : ''}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1">
                     <label className="font-bold text-slate-700 dark:text-slate-300 block">
-                      Assign Dispatch Driver
+                      Panga Dereva / Msafirishaji
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                       <select
                         value={ord.driverName || ''}
-                        onChange={(e) =>
-                          assignDriver(
-                            ord.id,
-                            e.target.value,
-                            '+255 755 999 888',
-                            'MC 441 DXX (TVS Tricycle)'
-                          )
-                        }
-                        className="flex-1 p-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!val) {
+                            assignDriver(ord.id, '', '', '');
+                            return;
+                          }
+                          const foundUser = users.find((u) => u.name === val || u.id === val);
+                          if (foundUser) {
+                            assignDriver(ord.id, foundUser.name, foundUser.phone || '', '');
+                          } else {
+                            assignDriver(ord.id, val, '', '');
+                          }
+                        }}
+                        className="flex-1 p-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-bold text-slate-800 dark:text-slate-200"
                       >
-                        <option value="">-- Chagua Dereva au Mjumbe --</option>
-                        {users.map((u) => (
-                          <option key={u.id} value={u.name}>
-                            {u.name} ({u.phone || u.email})
-                          </option>
-                        ))}
+                        <option value="">-- {ord.driverName ? 'Badilisha / Ondoa Dereva' : 'Chagua Dereva au Mjumbe'} --</option>
+                        {users
+                          .filter((u) => u.role === 'DRIVER' || u.role === 'TECHNICIAN' || u.role === 'MANAGER' || u.role === 'STAFF_ADMIN')
+                          .map((u) => (
+                            <option key={u.id} value={u.name}>
+                              {u.name} ({u.role}{u.phone ? ` - ${u.phone}` : ''})
+                            </option>
+                          ))}
+                        {users.filter((u) => u.role === 'DRIVER' || u.role === 'TECHNICIAN' || u.role === 'MANAGER' || u.role === 'STAFF_ADMIN').length === 0 && (
+                          users.map((u) => (
+                            <option key={u.id} value={u.name}>
+                              {u.name} ({u.phone || u.email})
+                            </option>
+                          ))
+                        )}
                       </select>
+                      {ord.driverName && (
+                        <button
+                          type="button"
+                          onClick={() => assignDriver(ord.id, '', '', '')}
+                          className="px-2.5 py-2 text-xs rounded-xl bg-rose-100 dark:bg-rose-950/50 hover:bg-rose-200 text-rose-700 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-800 shrink-0"
+                          title="Ondoa dereva huyu kwenye oda"
+                        >
+                          Ondoa
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -902,17 +948,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-rose-500" />
-                    <span>{t('emergencyHotlineLabel', 'Hotline ya Dharura')}</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-rose-500" />
+                      <span>{t('emergencyHotlineLabel', 'Hotline ya Dharura')}</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-rose-600 dark:text-rose-400 font-bold">
+                      {editingEmergencyPhone.trim() ? 'Namba Maalum' : 'Inatumia Namba ya Huduma'}
+                    </span>
+                  </div>
                   <input
                     type="text"
                     value={editingEmergencyPhone}
                     onChange={(e) => setEditingEmergencyPhone(e.target.value)}
-                    placeholder="+255 754 000 111"
+                    placeholder="Weka namba maalum ya dharura au acha wazi kutumia namba ya huduma"
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                   />
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Namba itakayoonekana kwenye kitufe cha dharura ukurasa wa Matengenezo: <strong className="text-rose-600 dark:text-rose-400 font-mono">{(editingEmergencyPhone.trim() || editingCompanyPhone.trim()) || 'Bado haijawekwa'}</strong>
+                  </p>
                 </div>
 
                 <div className="space-y-1 sm:col-span-2 lg:col-span-1">
@@ -941,6 +995,161 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     placeholder="Mikocheni B, Sayansi / Kijitonyama, Dar es Salaam"
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                   />
+                </div>
+              </div>
+
+              {/* YouTube Tutorial Video Configuration Section */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                      <Youtube className="w-4 h-4 text-rose-600" />
+                      <span>Video ya Mwongozo wa App (YouTube Tutorial Video)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Weka link ya video ya YouTube (mfano https://www.youtube.com/watch?v=... au https://youtu.be/...) itakayoonekana kwa wateja wote kwenye ukurasa wa mwanzo chini ya maelezo ya YMA.
+                    </p>
+                  </div>
+
+                  {editingTutorialVideoUrl.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingTutorialVideoUrl('')}
+                      className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20"
+                    >
+                      Ondoa Video (Remove Video)
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 items-start">
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <Youtube className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Link ya Video ya YouTube (URL)</span>
+                      </label>
+                      <input
+                        type="url"
+                        value={editingTutorialVideoUrl}
+                        onChange={(e) => setEditingTutorialVideoUrl(e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ au https://youtu.be/..."
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                      />
+                      <p className="text-[10px] text-slate-500">
+                        Inasaidia links za kawaida, YouTube Shorts, na youtu.be links.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Kichwa cha Video (Title)
+                      </label>
+                      <input
+                        type="text"
+                        value={editingTutorialVideoTitle}
+                        onChange={(e) => setEditingTutorialVideoTitle(e.target.value)}
+                        placeholder="Jinsi ya Kutumia App ya YMA ENERGY GROUP"
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Maelezo Mafupi (Description)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editingTutorialVideoDesc}
+                        onChange={(e) => setEditingTutorialVideoDesc(e.target.value)}
+                        placeholder="Tazama video fupi ya hatua kwa hatua kujifunza jinsi ya kuagiza vifaa vya sola na kuomba huduma..."
+                        className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 resize-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                        <span>Ukubwa / Umbile la Video (Aspect Ratio)</span>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                          {editingTutorialVideoAspectRatio === 'auto'
+                            ? `Auto: ${detectVideoAspectRatio(editingTutorialVideoUrl, 'auto')}`
+                            : editingTutorialVideoAspectRatio}
+                        </span>
+                      </label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {[
+                          { id: 'auto', label: '🪄 Auto', desc: 'Inatambua yenyewe' },
+                          { id: '16:9', label: '🖥️ 16:9', desc: 'Widescreen' },
+                          { id: '9:16', label: '📱 9:16', desc: 'Shorts / Reels' },
+                          { id: '1:1', label: '🔲 1:1', desc: 'Instagram Post' },
+                        ].map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setEditingTutorialVideoAspectRatio(opt.id as any)}
+                            className={`p-2 rounded-xl text-center border transition-all ${
+                              editingTutorialVideoAspectRatio === opt.id
+                                ? 'bg-amber-500 text-white border-amber-600 font-bold shadow-xs'
+                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span className="block text-[11px] font-extrabold">{opt.label}</span>
+                            <span className="block text-[9px] opacity-80 truncate">{opt.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Real-time YouTube Live Preview with Responsive Ratio */}
+                  {(() => {
+                    const activeRatio = detectVideoAspectRatio(editingTutorialVideoUrl, editingTutorialVideoAspectRatio);
+                    return (
+                      <div className="space-y-1 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex flex-col items-center justify-center min-h-[220px]">
+                        <div className="w-full flex items-center justify-between pb-1">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                            <Play className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Hakikisho la Video ({activeRatio})</span>
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.5 rounded ${
+                              getYouTubeEmbedUrl(editingTutorialVideoUrl)
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                            }`}
+                          >
+                            {getYouTubeEmbedUrl(editingTutorialVideoUrl) ? 'Inafanya Kazi' : 'Hakuna Video / Link Batili'}
+                          </span>
+                        </div>
+
+                        {getYouTubeEmbedUrl(editingTutorialVideoUrl) ? (
+                          <div
+                            className={`w-full overflow-hidden bg-black border border-slate-700 shadow-md transition-all ${
+                              activeRatio === '9:16'
+                                ? 'aspect-[9/16] max-w-[200px] rounded-2xl'
+                                : activeRatio === '1:1'
+                                ? 'aspect-square max-w-[240px] rounded-2xl'
+                                : 'aspect-video max-w-full rounded-xl'
+                            }`}
+                          >
+                            <iframe
+                              src={getYouTubeEmbedUrl(editingTutorialVideoUrl) || ''}
+                              title="Admin Preview"
+                              className="w-full h-full border-0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                          </div>
+                        ) : (
+                          <div className="aspect-video w-full rounded-xl bg-slate-200/60 dark:bg-slate-800 flex flex-col items-center justify-center text-center p-4 text-slate-400 dark:text-slate-500 border border-dashed border-slate-300 dark:border-slate-700 space-y-1">
+                            <Youtube className="w-8 h-8 text-slate-400 dark:text-slate-600" />
+                            <p className="text-xs font-bold">Weka link ya YouTube hapo pembeni ili kuona hakikisho hapa.</p>
+                            <p className="text-[10px]">Wateja wataiona video hii kwenye ukurasa wa kwanza kulingana na muundo wake ({activeRatio}).</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1280,31 +1489,94 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {(users || []).map((u) => (
                 <div
                   key={u.id}
-                  className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 shadow-sm"
+                  className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3 shadow-sm flex flex-col justify-between"
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-0.5">
                       <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">{u.name}</h4>
                       <p className="text-[11px] text-slate-500 font-mono">{u.email}</p>
-                      <p className="text-[11px] text-slate-400">{u.phone}</p>
+                      <p className="text-[11px] text-slate-400">{u.phone || 'Hakuna Namba'}</p>
                     </div>
 
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                        u.role === 'ADMIN'
-                          ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                          : u.role === 'MANAGER'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                      }`}
-                    >
-                      {u.role}
-                    </span>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                          u.role === 'ADMIN' || u.role === 'SUPER_ADMIN'
+                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                            : u.role === 'MANAGER'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                            : u.role === 'TECHNICIAN'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                            : u.role === 'DRIVER'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        }`}
+                      >
+                        {u.role}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">Status: <strong className="text-emerald-500 capitalize">{u.status || 'active'}</strong></span>
-                    <span className="text-slate-400 font-mono text-[10px]">ID: {u.id.substring(0, 8)}...</span>
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1">
+                        <label className="text-[10px] text-slate-400 font-bold block mb-0.5">Badilisha Role:</label>
+                        <select
+                          value={u.role}
+                          onChange={(e) => {
+                            const newRole = e.target.value as any;
+                            updateUserRole(u.id, newRole);
+                            showToast({
+                              title: 'Role Imesasishwa! 🛡️',
+                              message: `Akaunti ya ${u.name} sasa ni ${newRole}.`,
+                              type: 'success',
+                            });
+                          }}
+                          className="w-full p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[11px] font-bold text-slate-800 dark:text-slate-200"
+                        >
+                          <option value="CUSTOMER">CUSTOMER (Mteja)</option>
+                          <option value="TECHNICIAN">TECHNICIAN (Fundi)</option>
+                          <option value="DRIVER">DRIVER (Dereva/Msafirishaji)</option>
+                          <option value="MANAGER">MANAGER (Meneja)</option>
+                          {isSuperAdmin && (
+                            <>
+                              <option value="STAFF_ADMIN">STAFF_ADMIN</option>
+                              <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                            </>
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Delete user button */}
+                      {u.id !== currentUser?.id && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            promptDelete(
+                              'Thibitisha Kufuta Akaunti',
+                              `Je, una uhakika unataka kufuta akaunti ya "${u.name}" (${u.role})? Hatua hii itamwondoa kabisa kwenye database.`,
+                              () => {
+                                deleteUserAccount(u.id);
+                                showToast({
+                                  title: 'Akaunti Imefutwa 🗑️',
+                                  message: `Akaunti ya ${u.name} imeondolewa kikamilifu.`,
+                                  type: 'info',
+                                });
+                              }
+                            )
+                          }
+                          className="p-2 mt-3 rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors"
+                          title="Futa akaunti hii"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-400">
+                      <span>Status: <strong className="text-emerald-500 capitalize">{u.status || 'active'}</strong></span>
+                      <span className="font-mono">ID: {u.id.substring(0, 8)}...</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1377,6 +1649,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         }`}
                       >
                         Technician (Fundi Uwandani)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setStaffRole('DRIVER')}
+                        className={`p-2 rounded-xl font-bold border text-xs ${
+                          staffRole === 'DRIVER'
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        Driver (Dereva / Msafirishaji)
                       </button>
 
                       {isSuperAdmin && (
@@ -1785,9 +2069,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
               <button
                 onClick={async () => {
+                  const targetEmail = (companySettings?.companyEmail || '').trim();
+                  if (!targetEmail) {
+                    showToast({
+                      title: 'Weka Barua Pepe Kwanza',
+                      message: 'Tafadhali weka barua pepe ya kampuni kwenye fomu ya Mawasiliano hapo juu kabla ya kutuma jaribio.',
+                      type: 'warning',
+                    });
+                    return;
+                  }
                   setIsSendingTestEmail(true);
                   try {
-                    const targetEmail = companySettings?.companyEmail || 'support@ymaenergy.co.tz';
                     const res = await fetch('/api/test-email', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -1816,7 +2108,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-800/80 text-xs font-mono">
               <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
                 <p className="text-[10px] text-slate-400">Target Admin / Customer Support Email</p>
-                <p className="font-bold text-amber-400 truncate">{companySettings?.companyEmail || 'support@ymaenergy.co.tz'}</p>
+                <p className="font-bold text-amber-400 truncate">{companySettings?.companyEmail || 'Haijawekwa (Not Set)'}</p>
               </div>
               <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
                 <p className="text-[10px] text-slate-400">Trigger Status</p>

@@ -325,13 +325,15 @@ export const LiveTechnicianModal: React.FC<LiveTechnicianModalProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <a
-                href={`tel:${settings.companyPhone}`}
-                className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>{settings.companyPhone}</span>
-              </a>
+              {settings.companyPhone && (
+                <a
+                  href={`tel:${settings.companyPhone.replace(/\s+/g, '')}`}
+                  className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>{settings.companyPhone}</span>
+                </a>
+              )}
 
               {onOpenLiveChat && (
                 <button

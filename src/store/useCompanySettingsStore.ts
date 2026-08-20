@@ -11,15 +11,19 @@ export interface CompanySettings {
   workingHours: string;
   hqAddress: string;
   socialLinks?: Record<string, string>;
+  tutorialVideoUrl?: string;
+  tutorialVideoTitle?: string;
+  tutorialVideoDesc?: string;
+  tutorialVideoAspectRatio?: 'auto' | '16:9' | '9:16' | '1:1';
 }
 
 export const defaultCompanySettings: CompanySettings = {
   companyName: 'YMA ENERGY GROUP',
-  companyPhone: '+255 622 359 874',
-  companyEmail: 'support@ymaenergy.co.tz',
-  emergencyPhone: '+255 754 000 111',
-  workingHours: '24/7 Customer Support | Mon - Sat: 08:00 - 18:00',
-  hqAddress: 'Mikocheni B, Sayansi / Kijitonyama, Dar es Salaam',
+  companyPhone: '',
+  companyEmail: '',
+  emergencyPhone: '',
+  workingHours: '',
+  hqAddress: '',
   socialLinks: {
     facebook: '',
     instagram: '',
@@ -31,6 +35,10 @@ export const defaultCompanySettings: CompanySettings = {
     telegram: '',
     github: '',
   },
+  tutorialVideoUrl: '',
+  tutorialVideoTitle: 'Jinsi ya Kutumia App ya YMA ENERGY GROUP',
+  tutorialVideoDesc: 'Tazama video fupi kujifunza jinsi ya kununua bidhaa za sola, kuagiza huduma za ufungaji, kuomba fundi wa dharura, na kufuatilia oda yako moja kwa moja.',
+  tutorialVideoAspectRatio: 'auto',
 };
 
 interface CompanySettingsState {
@@ -42,7 +50,7 @@ interface CompanySettingsState {
   updateSettings: (newSettings: Partial<CompanySettings>) => Promise<void>;
 }
 
-const LOCAL_STORAGE_KEY = 'yma_company_settings_v3';
+const LOCAL_STORAGE_KEY = 'yma_company_settings_v4';
 
 const loadCompanySettingsFromLocal = (): CompanySettings => {
   try {
@@ -50,7 +58,11 @@ const loadCompanySettingsFromLocal = (): CompanySettings => {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed && typeof parsed === 'object') {
-        return { ...defaultCompanySettings, ...parsed };
+        return {
+          ...defaultCompanySettings,
+          ...parsed,
+          socialLinks: parsed.socialLinks || defaultCompanySettings.socialLinks,
+        };
       }
     }
   } catch (e) {
@@ -81,7 +93,7 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
       settingsDocRef,
       (snapshot) => {
         if (snapshot.exists()) {
-          const remoteData = snapshot.data() as CompanySettings;
+          const remoteData = snapshot.data() as Partial<CompanySettings>;
           const merged: CompanySettings = {
             companyName: remoteData.companyName !== undefined ? remoteData.companyName : defaultCompanySettings.companyName,
             companyPhone: remoteData.companyPhone !== undefined ? remoteData.companyPhone : '',
@@ -89,18 +101,16 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
             emergencyPhone: remoteData.emergencyPhone !== undefined ? remoteData.emergencyPhone : '',
             workingHours: remoteData.workingHours !== undefined ? remoteData.workingHours : '',
             hqAddress: remoteData.hqAddress !== undefined ? remoteData.hqAddress : '',
-            socialLinks: remoteData.socialLinks || {},
+            socialLinks: remoteData.socialLinks !== undefined ? remoteData.socialLinks : defaultCompanySettings.socialLinks,
+            tutorialVideoUrl: remoteData.tutorialVideoUrl !== undefined ? remoteData.tutorialVideoUrl : '',
+            tutorialVideoTitle: remoteData.tutorialVideoTitle !== undefined ? remoteData.tutorialVideoTitle : defaultCompanySettings.tutorialVideoTitle,
+            tutorialVideoDesc: remoteData.tutorialVideoDesc !== undefined ? remoteData.tutorialVideoDesc : defaultCompanySettings.tutorialVideoDesc,
+            tutorialVideoAspectRatio: remoteData.tutorialVideoAspectRatio !== undefined ? remoteData.tutorialVideoAspectRatio : defaultCompanySettings.tutorialVideoAspectRatio,
           };
           saveCompanySettingsToLocal(merged);
           set({ settings: merged, isLoading: false });
         } else {
-          // If not in Firestore yet, write current local/default settings
-          const currentLocal = get().settings;
-          const cleanDoc = JSON.parse(JSON.stringify(currentLocal));
-          setDoc(settingsDocRef, cleanDoc).catch((err) =>
-            console.error('Error seeding company settings to Firestore:', err)
-          );
-          saveCompanySettingsToLocal(currentLocal);
+          // If document does not exist in Firestore, keep current memory/default without force overwriting
           set({ isLoading: false });
         }
       },
@@ -116,10 +126,7 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
     const updated: CompanySettings = {
       ...current,
       ...newSettings,
-      socialLinks: {
-        ...(current.socialLinks || {}),
-        ...(newSettings.socialLinks || {}),
-      },
+      socialLinks: newSettings.socialLinks !== undefined ? newSettings.socialLinks : (current.socialLinks || {}),
     };
     saveCompanySettingsToLocal(updated);
     set({ settings: updated });
@@ -130,6 +137,7 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
       await setDoc(settingsDocRef, cleanDoc);
     } catch (err) {
       console.error('Error updating company settings in Firestore:', err);
+      throw err;
     }
   },
 }));

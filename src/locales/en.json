@@ -111,7 +111,7 @@
 
   "repairsTitle": "Emergency Repair & Fault Reporting",
   "repairsSubtitle": "24/7 Rapid technician dispatch for faulty inverters, tripped protection fuses, and battery issues.",
-  "emergencyHotline": "Emergency Hotline: +255 622 359 874",
+  "emergencyHotline": "Emergency Hotline",
   "equipmentType": "Faulty Equipment Type",
   "problemDescription": "Detailed Fault Description",
   "attachPhoto": "Simulate Photo Attachment",
@@ -163,7 +163,7 @@
   "chatWithUs": "Live Chat Support",
   "whatsappUs": "WhatsApp Support",
   "callUs": "Call Helpline",
-  "emailUs": "Email Support (support@ymaenergy.com)",
+  "emailUs": "Email Support",
   "faqs": "Frequently Asked Questions",
   "privacyPolicy": "Privacy Policy",
   "termsOfService": "Terms & Conditions",

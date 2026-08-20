@@ -34,8 +34,14 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
   const { t } = useLanguage();
   const { repairRequests, createRepairTicket } = useRepairsStore();
   const { user } = useAuthStore();
-  const { settings } = useCompanySettingsStore();
+  const { settings, initFirebaseSync: initSettingsSync } = useCompanySettingsStore();
   const showToast = useToastStore((s) => s.showToast);
+
+  React.useEffect(() => {
+    initSettingsSync();
+  }, [initSettingsSync]);
+
+  const activeHotlinePhone = (settings.emergencyPhone || settings.companyPhone || '').trim();
 
   const [customerName, setCustomerName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -133,13 +139,22 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
           <p className="text-xs text-rose-100">{t('repairsSubtitle')}</p>
         </div>
 
-        <a
-          href={`tel:${settings.emergencyPhone.replace(/\s+/g, '')}`}
-          className="px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-white text-rose-700 hover:bg-rose-50 font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shrink-0"
-        >
-          <Phone className="w-3.5 h-3.5" />
-          <span>{t('emergencyHotline')}</span>
-        </a>
+        {activeHotlinePhone ? (
+          <a
+            href={`tel:${activeHotlinePhone.replace(/\s+/g, '')}`}
+            className="px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-white text-rose-700 hover:bg-rose-50 font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md shrink-0 transition-transform active:scale-95"
+          >
+            <Phone className="w-3.5 h-3.5 text-rose-600" />
+            <span>
+              {t('emergencyHotline', 'Hotline ya Dharura')}: {activeHotlinePhone}
+            </span>
+          </a>
+        ) : (
+          <div className="px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl bg-white/20 text-white font-bold text-xs flex items-center gap-2 shrink-0">
+            <Phone className="w-3.5 h-3.5 text-amber-300" />
+            <span>{t('emergencyHotline', 'Hotline ya Dharura')} (24/7)</span>
+          </div>
+        )}
       </div>
 
       {/* Main Repair Logging Form */}
