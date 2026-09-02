@@ -33,10 +33,27 @@ interface PaymentGatewayState {
   deleteGateway: (id: string) => Promise<void>;
 }
 
+const GATEWAYS_CACHE_KEY = 'yma_cached_gateways_v1';
+
+const loadCachedGateways = (): PaymentGateway[] => {
+  try {
+    const raw = localStorage.getItem(GATEWAYS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading cached payment gateways:', e);
+  }
+  return [];
+};
+
+const initialGateways = loadCachedGateways();
+
 export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => ({
-  gateways: [],
+  gateways: initialGateways,
   isFirebaseSynced: false,
-  isLoading: true,
+  isLoading: initialGateways.length === 0,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -54,6 +71,9 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
               id: d.id,
             } as PaymentGateway;
           });
+          try {
+            localStorage.setItem(GATEWAYS_CACHE_KEY, JSON.stringify(remoteGateways));
+          } catch (e) {}
           set({ gateways: remoteGateways, isLoading: false });
         } else {
           set({ gateways: [], isLoading: false });

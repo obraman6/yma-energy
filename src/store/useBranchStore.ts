@@ -20,10 +20,27 @@ interface BranchState {
   deleteBranch: (id: string) => Promise<void>;
 }
 
+const BRANCHES_CACHE_KEY = 'yma_cached_branches_v1';
+
+const loadCachedBranches = (): Branch[] => {
+  try {
+    const raw = localStorage.getItem(BRANCHES_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading cached branches:', e);
+  }
+  return [];
+};
+
+const initialBranches = loadCachedBranches();
+
 export const useBranchStore = create<BranchState>((set, get) => ({
-  branches: [],
+  branches: initialBranches,
   isFirebaseSynced: false,
-  isLoading: true,
+  isLoading: initialBranches.length === 0,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -41,6 +58,9 @@ export const useBranchStore = create<BranchState>((set, get) => ({
               id: d.id, // ALWAYS use d.id as the authoritative document ID
             } as Branch;
           });
+          try {
+            localStorage.setItem(BRANCHES_CACHE_KEY, JSON.stringify(remoteBranches));
+          } catch (e) {}
           set({ branches: remoteBranches, isLoading: false });
         } else {
           set({ branches: [], isLoading: false });

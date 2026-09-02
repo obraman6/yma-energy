@@ -59,9 +59,10 @@ function MainAppContent() {
   }, [enableShopModule, activeTab]);
 
   useEffect(() => {
+    // Ultra-fast splash screen transition so UI and data display immediately
     const timer = setTimeout(() => {
       setIsAppLoading(false);
-    }, 3000);
+    }, 300);
     return () => clearTimeout(timer);
   }, []);
 

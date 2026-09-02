@@ -80,7 +80,7 @@ export interface ServiceRequest {
   district: string;
   preferredDate: string;
   timeSlot: 'Morning' | 'Afternoon' | 'Evening';
-  roofType: 'Iron Sheet' | 'Tiles' | 'Concrete Slab' | 'Ground Mount';
+  roofType: string;
   priority: 'Normal' | 'Urgent';
   notes?: string;
   assignedTechnician?: string;

@@ -28,10 +28,27 @@ interface RepairsState {
 
 const recentRepairSubmissions = new Map<string, { timestamp: number; ticket: RepairRequest }>();
 
+const REPAIRS_CACHE_KEY = 'yma_cached_repairs_v1';
+
+const loadCachedRepairs = (): RepairRequest[] => {
+  try {
+    const raw = localStorage.getItem(REPAIRS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading cached repairs:', e);
+  }
+  return [];
+};
+
+const initialRepairs = loadCachedRepairs();
+
 export const useRepairsStore = create<RepairsState>((set, get) => ({
-  repairRequests: [],
+  repairRequests: initialRepairs,
   isFirebaseSynced: false,
-  isLoading: true,
+  isLoading: initialRepairs.length === 0,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -42,6 +59,9 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
       repairsRef,
       (snapshot) => {
         const remoteRepairs: RepairRequest[] = snapshot.docs.map((d) => d.data() as RepairRequest);
+        try {
+          localStorage.setItem(REPAIRS_CACHE_KEY, JSON.stringify(remoteRepairs));
+        } catch (e) {}
         set({ repairRequests: remoteRepairs, isLoading: false });
       },
       (err) => {

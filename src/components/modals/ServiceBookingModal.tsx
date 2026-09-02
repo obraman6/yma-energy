@@ -46,7 +46,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
   const [district, setDistrict] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
   const [timeSlot, setTimeSlot] = useState<'Morning' | 'Afternoon' | 'Evening'>('Morning');
-  const [roofType, setRoofType] = useState<'Iron Sheet' | 'Tiles' | 'Concrete Slab' | 'Ground Mount'>('Iron Sheet');
+  const [roofType, setRoofType] = useState('Mabati');
   const [priority, setPriority] = useState<'Normal' | 'Urgent'>('Normal');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -281,18 +281,42 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    {t('roofType')}
+                    {t('roofType')} ({language === 'sw' ? 'Muundo wa Paa / Jengo' : 'Roof Structure Type'}) *
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={roofType}
-                    onChange={(e) => setRoofType(e.target.value as any)}
-                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
-                  >
-                    <option value="Iron Sheet">{t('ironSheet')}</option>
-                    <option value="Tiles">{t('tiles')}</option>
-                    <option value="Concrete Slab">{t('concreteSlab')}</option>
-                    <option value="Ground Mount">{t('groundMount')}</option>
-                  </select>
+                    onChange={(e) => setRoofType(e.target.value)}
+                    placeholder={language === 'sw' ? 'Andika aina ya paa (mf. Mabati, Vigae, Zege, Makuti...)' : 'Type roof type (e.g. Iron Sheet, Tiles, Concrete...)'}
+                    list="roof-structure-suggestions"
+                    required
+                    className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                  <datalist id="roof-structure-suggestions">
+                    <option value="Mabati (Iron Sheet)" />
+                    <option value="Vigae (Tiles)" />
+                    <option value="Zege (Concrete Slab)" />
+                    <option value="Muundo wa Chini (Ground Mount)" />
+                    <option value="Makuti" />
+                    <option value="Asbestos" />
+                    <option value="Gorofa / Balcony" />
+                  </datalist>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {['Mabati', 'Vigae', 'Zege', 'Ground Mount'].map((suggested) => (
+                      <button
+                        key={suggested}
+                        type="button"
+                        onClick={() => setRoofType(suggested)}
+                        className={`px-2 py-0.5 text-[10px] rounded-md border transition-all ${
+                          roofType.toLowerCase().includes(suggested.toLowerCase())
+                            ? 'bg-amber-500 text-white border-amber-500 font-bold'
+                            : 'bg-slate-100 dark:bg-slate-800/80 hover:bg-amber-100 dark:hover:bg-amber-950/40 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        + {suggested}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>

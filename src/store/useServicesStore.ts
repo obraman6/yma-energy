@@ -34,11 +34,43 @@ interface ServicesState {
 
 const recentServiceSubmissions = new Map<string, { timestamp: number; req: ServiceRequest }>();
 
+const SERVICES_CACHE_KEY = 'yma_cached_services_v1';
+const REQUESTS_CACHE_KEY = 'yma_cached_requests_v1';
+
+const loadCachedServices = (): SolarService[] => {
+  try {
+    const raw = localStorage.getItem(SERVICES_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading cached services:', e);
+  }
+  return [];
+};
+
+const loadCachedRequests = (): ServiceRequest[] => {
+  try {
+    const raw = localStorage.getItem(REQUESTS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading cached service requests:', e);
+  }
+  return [];
+};
+
+const initialServices = loadCachedServices();
+const initialRequests = loadCachedRequests();
+
 export const useServicesStore = create<ServicesState>((set, get) => ({
-  services: [],
-  serviceRequests: [],
+  services: initialServices,
+  serviceRequests: initialRequests,
   isFirebaseSynced: false,
-  isLoading: true,
+  isLoading: initialServices.length === 0,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -51,6 +83,9 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       (snapshot) => {
         if (snapshot.docs.length > 0) {
           const remoteServices: SolarService[] = snapshot.docs.map((d) => d.data() as SolarService);
+          try {
+            localStorage.setItem(SERVICES_CACHE_KEY, JSON.stringify(remoteServices));
+          } catch (e) {}
           set({ services: remoteServices, isLoading: false });
         } else {
           set({ services: [], isLoading: false });
@@ -68,6 +103,9 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       serviceRequestsRef,
       (snapshot) => {
         const remoteReqs: ServiceRequest[] = snapshot.docs.map((d) => d.data() as ServiceRequest);
+        try {
+          localStorage.setItem(REQUESTS_CACHE_KEY, JSON.stringify(remoteReqs));
+        } catch (e) {}
         set({ serviceRequests: remoteReqs });
       },
       (err) => console.error('Firestore serviceRequests sync error:', err)

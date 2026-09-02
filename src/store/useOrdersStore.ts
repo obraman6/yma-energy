@@ -28,10 +28,27 @@ interface OrdersState {
   clearAllOrders: () => Promise<void>;
 }
 
+const ORDERS_CACHE_KEY = 'yma_cached_orders_v1';
+
+const loadCachedOrders = (): Order[] => {
+  try {
+    const raw = localStorage.getItem(ORDERS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading cached orders:', e);
+  }
+  return [];
+};
+
+const initialOrders = loadCachedOrders();
+
 export const useOrdersStore = create<OrdersState>((set, get) => ({
-  orders: [],
+  orders: initialOrders,
   isFirebaseSynced: false,
-  isLoading: true,
+  isLoading: initialOrders.length === 0,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -42,6 +59,9 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
       ordersRef,
       (snapshot) => {
         const remoteOrders: Order[] = snapshot.docs.map((d) => d.data() as Order);
+        try {
+          localStorage.setItem(ORDERS_CACHE_KEY, JSON.stringify(remoteOrders));
+        } catch (e) {}
         set({ orders: remoteOrders, isLoading: false });
       },
       (err) => {

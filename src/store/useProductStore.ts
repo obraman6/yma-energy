@@ -39,14 +39,46 @@ interface ProductState {
   clearAllProductsAndReviews: () => Promise<void>;
 }
 
+const PRODUCTS_CACHE_KEY = 'yma_cached_products_v1';
+const REVIEWS_CACHE_KEY = 'yma_cached_reviews_v1';
+
+const loadCachedProducts = (): Product[] => {
+  try {
+    const raw = localStorage.getItem(PRODUCTS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading cached products:', e);
+  }
+  return [];
+};
+
+const loadCachedReviews = (): CustomerReview[] => {
+  try {
+    const raw = localStorage.getItem(REVIEWS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading cached reviews:', e);
+  }
+  return [];
+};
+
+const initialProducts = loadCachedProducts();
+const initialReviews = loadCachedReviews();
+
 export const useProductStore = create<ProductState>((set, get) => ({
-  products: [],
-  reviews: [],
+  products: initialProducts,
+  reviews: initialReviews,
   selectedCategory: 'All',
   searchQuery: '',
   sortBy: 'rating',
   isFirebaseSynced: false,
-  isLoading: true,
+  isLoading: initialProducts.length === 0,
 
   initFirebaseSync: () => {
     if (get().isFirebaseSynced) return;
@@ -59,6 +91,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
       (snapshot) => {
         if (snapshot.docs.length > 0) {
           const remoteProducts: Product[] = snapshot.docs.map((d) => d.data() as Product);
+          try {
+            localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(remoteProducts));
+          } catch (e) {}
           set({ products: remoteProducts, isLoading: false });
         } else {
           set({ products: [], isLoading: false });
@@ -76,6 +111,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
       reviewsRef,
       (snapshot) => {
         const remoteReviews: CustomerReview[] = snapshot.docs.map((d) => d.data() as CustomerReview);
+        try {
+          localStorage.setItem(REVIEWS_CACHE_KEY, JSON.stringify(remoteReviews));
+        } catch (e) {}
         set({ reviews: remoteReviews });
       },
       (err) => console.error('Firestore reviews sync error:', err)
