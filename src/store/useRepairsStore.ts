@@ -26,6 +26,8 @@ interface RepairsState {
   updateRepairStatus: (ticketId: string, status: RepairStatus) => Promise<void>;
 }
 
+const recentRepairSubmissions = new Map<string, { timestamp: number; ticket: RepairRequest }>();
+
 export const useRepairsStore = create<RepairsState>((set, get) => ({
   repairRequests: [],
   isFirebaseSynced: false,
@@ -55,6 +57,15 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
   },
 
   createRepairTicket: async (ticketData) => {
+    // Deduplication check: prevent multi-clicks / duplicate submissions within 5 seconds
+    const dedupKey = `${ticketData.userId || ticketData.phone || ''}_${ticketData.equipmentType}_${ticketData.region}_${ticketData.description}`;
+    const now = Date.now();
+    const existing = recentRepairSubmissions.get(dedupKey);
+    if (existing && now - existing.timestamp < 5000) {
+      console.warn('Duplicate repair ticket detected, returning existing ticket:', existing.ticket.requestNumber);
+      return existing.ticket;
+    }
+
     const randomNum = Math.floor(10000 + Math.random() * 90000);
     const id = `rep-${Date.now()}`;
     const newTicket: RepairRequest = {
@@ -64,6 +75,12 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
       status: 'Received',
       createdAt: new Date().toLocaleString(),
     };
+
+    // Cache submission key
+    recentRepairSubmissions.set(dedupKey, { timestamp: now, ticket: newTicket });
+    setTimeout(() => {
+      recentRepairSubmissions.delete(dedupKey);
+    }, 60000);
 
     const cleanTicket = JSON.parse(JSON.stringify(newTicket));
 

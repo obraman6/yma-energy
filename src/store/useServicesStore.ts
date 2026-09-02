@@ -31,6 +31,8 @@ interface ServicesState {
   clearAllServicesAndRequests: () => Promise<void>;
 }
 
+const recentServiceSubmissions = new Map<string, { timestamp: number; req: ServiceRequest }>();
+
 export const useServicesStore = create<ServicesState>((set, get) => ({
   services: [],
   serviceRequests: [],
@@ -114,6 +116,15 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
   },
 
   createServiceRequest: async (reqData) => {
+    // Deduplication check: prevent multi-clicks / duplicate submissions within 5 seconds
+    const dedupKey = `${reqData.userId || reqData.phone || ''}_${reqData.serviceId}_${reqData.preferredDate}_${reqData.timeSlot}`;
+    const now = Date.now();
+    const existing = recentServiceSubmissions.get(dedupKey);
+    if (existing && now - existing.timestamp < 5000) {
+      console.warn('Duplicate service request detected, returning existing request:', existing.req.requestNumber);
+      return existing.req;
+    }
+
     const randomNum = Math.floor(10000 + Math.random() * 90000);
     const id = `sr-${Date.now()}`;
     const newReq: ServiceRequest = {
@@ -123,6 +134,13 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       status: 'Queued',
       createdAt: new Date().toISOString().split('T')[0],
     };
+
+    // Cache submission key
+    recentServiceSubmissions.set(dedupKey, { timestamp: now, req: newReq });
+    // Clean old entries after 1 minute
+    setTimeout(() => {
+      recentServiceSubmissions.delete(dedupKey);
+    }, 60000);
 
     const cleanReq = JSON.parse(JSON.stringify(newReq));
     set((state) => ({ serviceRequests: [newReq, ...state.serviceRequests] }));

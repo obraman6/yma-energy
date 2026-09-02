@@ -11,6 +11,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Send,
+  Loader2,
 } from 'lucide-react';
 import { SolarService, ServiceRequest } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
@@ -48,6 +49,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
   const [roofType, setRoofType] = useState<'Iron Sheet' | 'Tiles' | 'Concrete Slab' | 'Ground Mount'>('Iron Sheet');
   const [priority, setPriority] = useState<'Normal' | 'Urgent'>('Normal');
   const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [submittedReq, setSubmittedReq] = useState<ServiceRequest | null>(null);
 
@@ -55,6 +57,8 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!user) {
       showToast({
         title: 'Ingia kwenye Akaunti (Login Required) 🔒',
@@ -74,23 +78,36 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
       return;
     }
 
-    const req = await createServiceRequest({
-      serviceId: service.id,
-      serviceName: service.name,
-      userId: user.id,
-      customerName: fullName || user.name,
-      phone: phone || user.phone || '',
-      email: email || user.email,
-      region,
-      district,
-      preferredDate,
-      timeSlot,
-      roofType,
-      priority,
-      notes,
-    });
+    setIsSubmitting(true);
 
-    setSubmittedReq(req);
+    try {
+      const req = await createServiceRequest({
+        serviceId: service.id,
+        serviceName: service.name,
+        userId: user.id,
+        customerName: fullName || user.name,
+        phone: phone || user.phone || '',
+        email: email || user.email,
+        region,
+        district,
+        preferredDate,
+        timeSlot,
+        roofType,
+        priority,
+        notes,
+      });
+
+      setSubmittedReq(req);
+    } catch (err) {
+      console.error('Error in service booking submission:', err);
+      showToast({
+        title: 'Hitilafu ya Kutuma Ombi',
+        message: 'Kuna tatizo limetokea wakati wa kutuma ombi. Tafadhali jaribu tena.',
+        type: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -336,10 +353,24 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
 
                 <button
                   type="submit"
-                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1.5"
+                  disabled={isSubmitting}
+                  className={`px-6 py-3 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
+                    isSubmitting
+                      ? 'bg-amber-400/80 text-white cursor-not-allowed opacity-80'
+                      : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md shadow-amber-500/20 active:scale-95'
+                  }`}
                 >
-                  <Send className="w-4 h-4" />
-                  <span>{t('submitBooking')}</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>{language === 'sw' ? 'Inatuma Ombi...' : 'Submitting Request...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>{t('submitBooking')}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

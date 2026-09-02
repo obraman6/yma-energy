@@ -14,6 +14,7 @@ import {
   Upload,
   X,
   ImageIcon,
+  Loader2,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useRepairsStore } from '../../store/useRepairsStore';
@@ -31,7 +32,7 @@ interface RepairsViewProps {
 }
 
 export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenTechnicianStatusModal }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { repairRequests, createRepairTicket } = useRepairsStore();
   const { user } = useAuthStore();
   const { settings, initFirebaseSync: initSettingsSync } = useCompanySettingsStore();
@@ -55,6 +56,7 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
   const [photoFileName, setPhotoFileName] = useState<string>('');
 
   const [submittedTicketRef, setSubmittedTicketRef] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,6 +85,8 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!user) {
       showToast({
         title: 'Ingia kwenye Akaunti (Login Required) 🔒',
@@ -102,28 +106,41 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
       return;
     }
 
-    const ticket = await createRepairTicket({
-      userId: user.id,
-      customerName: customerName || user.name,
-      phone: phone || user.phone || '',
-      region,
-      equipmentType: 'General Repair / N/A',
-      description,
-      priority,
-      hasPhoto: !!photoUrl,
-      photoUrl: photoUrl || '',
-    });
+    setIsSubmitting(true);
 
-    setSubmittedTicketRef(ticket.requestNumber);
-    setDescription('');
-    setPhotoUrl(null);
-    setPhotoFileName('');
+    try {
+      const ticket = await createRepairTicket({
+        userId: user.id,
+        customerName: customerName || user.name,
+        phone: phone || user.phone || '',
+        region,
+        equipmentType: 'General Repair / N/A',
+        description,
+        priority,
+        hasPhoto: !!photoUrl,
+        photoUrl: photoUrl || '',
+      });
 
-    showToast({
-      title: 'Tiketi ya Matengenezo Imesajiliwa! 🛠️',
-      message: `Tiketi #${ticket.requestNumber} imetumwa kikamilifu. Wataalamu wetu watakutafuta hivi punde.`,
-      type: 'success',
-    });
+      setSubmittedTicketRef(ticket.requestNumber);
+      setDescription('');
+      setPhotoUrl(null);
+      setPhotoFileName('');
+
+      showToast({
+        title: 'Tiketi ya Matengenezo Imesajiliwa! 🛠️',
+        message: `Tiketi #${ticket.requestNumber} imetumwa kikamilifu. Wataalamu wetu watakutafuta hivi punde.`,
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('Error creating repair ticket:', err);
+      showToast({
+        title: 'Hitilafu ya Tiketi',
+        message: 'Kuna tatizo limetokea wakati wa kutuma tiketi. Tafadhali jaribu tena.',
+        type: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -323,10 +340,24 @@ export const RepairsView: React.FC<RepairsViewProps> = ({ openAuthModal, onOpenT
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-rose-600/20 flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className={`w-full py-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+                  isSubmitting
+                    ? 'bg-rose-400/80 text-white cursor-not-allowed opacity-80'
+                    : 'bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/20 active:scale-95'
+                }`}
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>{t('submitRepairTicket')}</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>{language === 'sw' ? 'Inatuma Tiketi ya Matengenezo...' : 'Submitting Repair Ticket...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{t('submitRepairTicket')}</span>
+                  </>
+                )}
               </button>
             </form>
           </div>
