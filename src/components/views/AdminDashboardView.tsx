@@ -43,6 +43,10 @@ import {
   Video,
   Play,
   ExternalLink,
+  Store,
+  Eye,
+  EyeOff,
+  Power,
 } from 'lucide-react';
 import { getYouTubeEmbedUrl, detectVideoAspectRatio, VideoAspectRatio } from '../common/HowToUseAppSection';
 import { SOCIAL_PLATFORMS, SOCIAL_MEDIA_CONFIG } from '../../config/socialLinks';
@@ -82,7 +86,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   onOpenAddServiceModal,
   onOpenEditServiceModal,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const showToast = useToastStore((s) => s.showToast);
   const { user: currentUser, users, createStaffUser, updateProfile, deleteUserAccount, updateUserRole } = useAuthStore();
 
@@ -102,7 +106,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     initSettingsSync();
   }, [initBranchSync, initSettingsSync]);
 
-  // Company Contact Settings State
+  // Company Contact & Module Settings State
+  const [editingEnableShopModule, setEditingEnableShopModule] = useState<boolean>(true);
+  const [isTogglingShop, setIsTogglingShop] = useState(false);
   const [editingCompanyPhone, setEditingCompanyPhone] = useState('');
   const [editingCompanyEmail, setEditingCompanyEmail] = useState('');
   const [editingEmergencyPhone, setEditingEmergencyPhone] = useState('');
@@ -127,6 +133,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   useEffect(() => {
     if (companySettings) {
+      setEditingEnableShopModule(companySettings.enableShopModule ?? true);
       setEditingCompanyPhone(companySettings.companyPhone || '');
       setEditingCompanyEmail(companySettings.companyEmail || '');
       setEditingEmergencyPhone(companySettings.emergencyPhone || '');
@@ -150,11 +157,39 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     }
   }, [companySettings]);
 
+  // Instant 1-Click Shop Module Visibility Switcher
+  const handleToggleShopModule = async (newVal: boolean) => {
+    setIsTogglingShop(true);
+    try {
+      await updateCompanySettings({
+        enableShopModule: newVal,
+      });
+      setEditingEnableShopModule(newVal);
+      showToast({
+        title: newVal ? 'Duka Limefunguliwa! 🛍️' : 'Duka Limefichwa! 🛠️',
+        message: newVal
+          ? 'Wateja sasa wanaweza kuona duka (Shop), bidhaa, na kuweka oda mtandaoni.'
+          : 'Duka na bidhaa zote zimefichwa kwa wateja. Mfumo sasa unafanya kazi kama App ya Huduma & Matengenezo pekee.',
+        type: 'success',
+      });
+    } catch (err) {
+      console.error(err);
+      showToast({
+        title: 'Hitilafu!',
+        message: 'Imeshindwa kubadilisha hali ya duka. Jaribu tena.',
+        type: 'error',
+      });
+    } finally {
+      setIsTogglingShop(false);
+    }
+  };
+
   const handleSaveCompanySettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingCompanySettings(true);
     try {
       await updateCompanySettings({
+        enableShopModule: editingEnableShopModule,
         companyPhone: editingCompanyPhone,
         companyEmail: editingCompanyEmail,
         emergencyPhone: editingEmergencyPhone,
@@ -167,8 +202,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         socialLinks: editingSocialLinks,
       });
       showToast({
-        title: 'Taarifa na Video Zimehifadhiwa! 🌐',
-        message: 'Taarifa za mawasiliano, video ya YouTube ya mafunzo, na viungo vya mitandao zimesasishwa kote kwenye mfumo.',
+        title: 'Taarifa na Mipangilio Zimehifadhiwa! 🌐',
+        message: 'Mipangilio ya duka, mawasiliano, video, na mitandao zimesasishwa kote kwenye mfumo.',
         type: 'success',
       });
     } catch (err) {
@@ -478,14 +513,101 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         </div>
       </div>
 
+      {/* MASTER APP OPERATING MODE & SHOP MODULE VISIBILITY CONTROL */}
+      <div className={`p-4 sm:p-5 rounded-2xl border shadow-sm transition-all duration-300 ${
+        editingEnableShopModule
+          ? 'bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-slate-900/5 dark:to-slate-900/40 border-amber-500/30'
+          : 'bg-gradient-to-r from-sky-500/10 via-sky-500/5 to-slate-900/5 dark:to-slate-900/40 border-sky-500/30'
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className={`p-2.5 sm:p-3 rounded-2xl shrink-0 ${
+              editingEnableShopModule
+                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                : 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
+            }`}>
+              {editingEnableShopModule ? <Store className="w-5 h-5 sm:w-6 sm:h-6" /> : <Wrench className="w-5 h-5 sm:w-6 sm:h-6" />}
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                  {language === 'sw' ? 'Muundo wa Uendeshaji wa App (Operating Mode)' : 'Application Operating Mode'}
+                </h2>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                  editingEnableShopModule
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                    : 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30'
+                }`}>
+                  {editingEnableShopModule
+                    ? (language === 'sw' ? '🛍️ DUKA + HUDUMA (Full Mode)' : '🛍️ SHOP + SERVICES')
+                    : (language === 'sw' ? '🔧 HUDUMA & MATENGENEZO TU (Services Only)' : '🔧 SERVICES & REPAIRS ONLY')}
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+                {editingEnableShopModule
+                  ? (language === 'sw'
+                      ? 'Duka lipo wazi kwa wateja wote. Wateja wanaweza kuona orodha ya bidhaa za sola, kuweka bidhaa kwenye kikapu, na kuagiza mtandaoni.'
+                      : 'Shop module is active for all customers. Product catalog, cart, and e-commerce checkouts are visible and usable.')
+                  : (language === 'sw'
+                      ? 'Duka na bidhaa zote zimefichwa kwa wateja. App inafanya kazi maalum kwa ajili ya kuomba huduma za ufungaji wa sola, tathmini za kiufundi, na matengenezo ya dharura.'
+                      : 'Shop and product catalog are completely hidden from customers. App operates strictly as a solar engineering, field service, and emergency repair platform.')}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
+            <button
+              type="button"
+              disabled={isTogglingShop}
+              onClick={() => handleToggleShopModule(!editingEnableShopModule)}
+              className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer ${
+                editingEnableShopModule
+                  ? 'bg-slate-900 hover:bg-slate-800 text-amber-400 dark:bg-slate-800 dark:hover:bg-slate-700 border border-amber-500/30'
+                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white'
+              }`}
+            >
+              {isTogglingShop ? (
+                <span>{language === 'sw' ? 'Inabadilisha...' : 'Updating...'}</span>
+              ) : editingEnableShopModule ? (
+                <>
+                  <EyeOff className="w-4 h-4 text-rose-400" />
+                  <span>{language === 'sw' ? 'Ficha Duka (Hide Shop)' : 'Hide Shop Module'}</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 text-emerald-300" />
+                  <span>{language === 'sw' ? 'Washa Duka (Enable Shop)' : 'Enable Shop Module'}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Horizontal Tab Navigation Bar (Matching Image 1) */}
       <div className="bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 px-1 no-scrollbar sm:flex-wrap">
           {[
-            { id: 'inventory', label: 'Catalog & Inventory', icon: Package, count: products.length, show: true },
-            { id: 'orders', label: 'Orders & Logistics', icon: ShoppingBag, count: orders.length, show: true },
+            {
+              id: 'inventory',
+              label: 'Catalog & Inventory',
+              icon: Package,
+              count: products.length,
+              statusBadge: !editingEnableShopModule ? (language === 'sw' ? 'Fichwa' : 'Hidden') : undefined,
+              show: true,
+            },
+            {
+              id: 'orders',
+              label: 'Orders & Logistics',
+              icon: ShoppingBag,
+              count: orders.length,
+              statusBadge: !editingEnableShopModule ? (language === 'sw' ? 'Shop Off' : 'Shop Off') : undefined,
+              show: true,
+            },
             { id: 'services', label: 'Services & Surveyors', icon: Wrench, count: serviceRequests.length, show: true },
-            { id: 'branches', label: '🏢 Matawi & Maeneo', icon: Building2, count: branches.length, show: true },
+            { id: 'branches', label: '🏢 Matawi & Mipangilio', icon: Building2, count: branches.length, show: true },
             { id: 'inquiries', label: 'Ujumbe wa Wateja', icon: MessageSquare, count: inquiriesList.length, highlight: true, show: true },
             { id: 'emails', label: '📧 Email Alerts', icon: Mail, count: emailAlertsList.length, highlight: true, show: true },
             { id: 'gateways', label: 'Payment Gateways', icon: CreditCard, count: gateways.length, show: true },
@@ -511,6 +633,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   <span>{item.label}</span>
+                  {item.statusBadge && (
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                      {item.statusBadge}
+                    </span>
+                  )}
                   {item.count !== undefined && item.count !== null && (
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 transition-colors ${
@@ -533,6 +660,33 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       {/* SUB-TAB 1: CATALOG & INVENTORY */}
       {activeAdminTab === 'inventory' && (
         <div className="space-y-4">
+          {!editingEnableShopModule && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 dark:text-amber-200">
+              <div className="flex items-start gap-2.5">
+                <EyeOff className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider">
+                    {language === 'sw' ? 'Duka Limefichwa kwa Wateja (Shop is Hidden)' : 'Shop Module is currently Hidden from Customers'}
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    {language === 'sw'
+                      ? 'Wateja hawaoni bidhaa au duka kwa sasa. Unaweza kuendelea kuongeza au kurekebisha bidhaa hapa wakati wowote kabla ya kufungua tena.'
+                      : 'Customers currently cannot see products or shop pages. You can still manage stock and catalog here before re-opening.'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleToggleShopModule(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs shrink-0 shadow-sm flex items-center gap-1.5 justify-center"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>{language === 'sw' ? 'Washa Duka Sasa' : 'Enable Shop Now'}</span>
+              </button>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
               Hardware Catalog Management
@@ -913,6 +1067,45 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             </div>
 
             <form onSubmit={handleSaveCompanySettings} className="space-y-4">
+              {/* App Operating Mode / Shop Toggle */}
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <Store className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      {language === 'sw' ? 'Hali ya Duka la Bidhaa (Shop Module)' : 'Shop & Hardware Catalog Module'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditingEnableShopModule(!editingEnableShopModule)}
+                    className="flex items-center gap-2 text-xs font-extrabold"
+                  >
+                    <span className={editingEnableShopModule ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}>
+                      {editingEnableShopModule
+                        ? (language === 'sw' ? 'DUKA LIKO WAZI' : 'SHOP ACTIVE')
+                        : (language === 'sw' ? 'DUKA LIMEFICHWA' : 'SHOP HIDDEN')}
+                    </span>
+                    {editingEnableShopModule ? (
+                      <ToggleRight className="w-7 h-7 text-emerald-500" />
+                    ) : (
+                      <ToggleLeft className="w-7 h-7 text-slate-400" />
+                    )}
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {editingEnableShopModule
+                    ? (language === 'sw'
+                        ? 'Wateja wanaweza kuona orodha ya bidhaa, kutafuta, kuongeza kwenye kikapu, na kuagiza mtandaoni.'
+                        : 'Customer navigation includes Shop, product listings, cart, and order checkout.')
+                    : (language === 'sw'
+                        ? 'Duka na kikapu vimefichwa kote kwenye app. Wateja wanaona huduma, matengenezo, na mawasiliano pekee.'
+                        : 'Shop, products catalog, and cart are hidden across the customer UI. Only services & repairs are visible.')}
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">

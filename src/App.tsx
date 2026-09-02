@@ -41,12 +41,22 @@ import { Product, SolarService, Order, Branch, Warranty, ServiceRequest, RepairR
 import { useOrdersStore } from './store/useOrdersStore';
 import { useRepairsStore } from './store/useRepairsStore';
 import { useAuthStore } from './store/useAuthStore';
+import { useCompanySettingsStore } from './store/useCompanySettingsStore';
 
 function MainAppContent() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
   const [isStandaloneApp, setIsStandaloneApp] = useState<boolean>(false);
   const { language } = useLanguage();
+  const { settings } = useCompanySettingsStore();
+  const enableShopModule = settings.enableShopModule !== false;
+
+  // Auto redirect if shop is disabled and user is on shop or cart tab
+  useEffect(() => {
+    if (!enableShopModule && (activeTab === 'shop' || activeTab === 'cart')) {
+      setActiveTab('services');
+    }
+  }, [enableShopModule, activeTab]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

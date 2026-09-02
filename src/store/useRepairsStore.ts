@@ -75,14 +75,28 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
       console.error('Error creating repair ticket in Firebase:', err);
     }
 
-    // Trigger notification
+    // Trigger notification for admin & customer
     useNotificationStore.getState().addNotification({
-      title: `Tiketi Mpya ya Dharura: ${newTicket.requestNumber}`,
-      titleSw: `Tiketi Mpya ya Dharura: ${newTicket.requestNumber}`,
-      message: `Mteja ${newTicket.customerName} amefungua tiketi ya dharura (${newTicket.equipmentType}). Simu: ${newTicket.phone}.`,
-      messageSw: `Mteja ${newTicket.customerName} amefungua tiketi ya dharura (${newTicket.equipmentType}). Simu: ${newTicket.phone}.`,
+      title: `Tiketi ya Dharura Imepokelewa: #${newTicket.requestNumber}`,
+      titleSw: `Tiketi ya Dharura Imepokelewa: #${newTicket.requestNumber}`,
+      message: `Habari ${newTicket.customerName}, tiketi yako ya matengenezo (${newTicket.equipmentType}) imepokelewa. Tutatuma mhandisi hivi punde.`,
+      messageSw: `Habari ${newTicket.customerName}, tiketi yako ya matengenezo (${newTicket.equipmentType}) imepokelewa. Tutatuma mhandisi hivi punde.`,
       type: 'maintenance',
       isPush: true,
+      userId: newTicket.userId || newTicket.phone,
+      targetRole: 'CUSTOMER',
+      url: '/account',
+    });
+
+    useNotificationStore.getState().addNotification({
+      title: `🚨 Tiketi Mpya ya Dharura: #${newTicket.requestNumber}`,
+      titleSw: `🚨 Tiketi Mpya ya Dharura: #${newTicket.requestNumber}`,
+      message: `Mteja ${newTicket.customerName} (${newTicket.phone}) amefungua tiketi ya dharura (${newTicket.equipmentType}) eneo la ${newTicket.region}.`,
+      messageSw: `Mteja ${newTicket.customerName} (${newTicket.phone}) amefungua tiketi ya dharura (${newTicket.equipmentType}) eneo la ${newTicket.region}.`,
+      type: 'maintenance',
+      isPush: true,
+      targetRole: 'ADMIN',
+      url: '/admin',
     });
 
     // Trigger real-time admin email notification

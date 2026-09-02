@@ -1,5 +1,5 @@
 // YMA ENERGY PWA Service Worker
-const CACHE_NAME = 'yma-energy-v1';
+const CACHE_NAME = 'yma-energy-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -39,7 +39,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Optional cache update
         return response;
       })
       .catch(() => {
@@ -52,5 +51,78 @@ self.addEventListener('fetch', (event) => {
           }
         });
       })
+  );
+});
+
+// SYSTEM PUSH NOTIFICATION EVENT (Background push from Server/FCM)
+self.addEventListener('push', (event) => {
+  let data = {
+    title: '☀️ YMA ENERGY GROUP',
+    body: 'Una taarifa mpya kutoka YMA Energy!',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    url: '/',
+    tag: 'yma-notification',
+  };
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
+    } catch (e) {
+      data.body = event.data.text() || data.body;
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/icon-192.png',
+    badge: data.badge || '/icon-192.png',
+    vibrate: [300, 100, 300, 100, 300],
+    tag: data.tag || `yma-${Date.now()}`,
+    renotify: true,
+    requireInteraction: false,
+    data: {
+      url: data.url || '/',
+      timestamp: Date.now(),
+    },
+    actions: [
+      { action: 'open', title: 'Fungua App' },
+      { action: 'close', title: 'Funga' },
+    ],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// NOTIFICATION CLICK EVENT (When user taps the notification in phone top bar)
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'close') {
+    return;
+  }
+
+  const targetUrl = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // If a window is already open, focus it
+      for (const client of windowClients) {
+        if ('focus' in client) {
+          return client.focus().then((focused) => {
+            if (focused && 'navigate' in focused && targetUrl && targetUrl !== '/') {
+              return focused.navigate(targetUrl);
+            }
+          });
+        }
+      }
+      // If no window is open, open a new one
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
   );
 });

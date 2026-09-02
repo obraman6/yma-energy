@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, UserRole } from '../types';
 import { auth, db } from '../lib/firebase';
+import { useNotificationStore } from './useNotificationStore';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -220,6 +221,20 @@ export const useAuthStore = create<AuthState>()(
       };
       await setDoc(doc(db, 'users', res.user.uid), newUser);
       set({ user: newUser, isLoading: false });
+
+      // Send personalized welcome notification
+      useNotificationStore.getState().addNotification({
+        title: `Karibu YMA Energy, ${name}! ☀️`,
+        titleSw: `Karibu YMA Energy, ${name}! ☀️`,
+        message: 'Akaunti yako imefunguliwa kwa mafanikio. Unaweza kufuatilia maombi ya huduma, mafundi, na oda zako moja kwa moja.',
+        messageSw: 'Akaunti yako imefunguliwa kwa mafanikio. Unaweza kufuatilia maombi ya huduma, mafundi, na oda zako moja kwa moja.',
+        type: 'system',
+        isPush: true,
+        userId: newUser.id,
+        userEmail: newUser.email,
+        targetRole: 'CUSTOMER',
+      });
+
       return { success: true, user: newUser };
     } catch (err: any) {
       if (err?.code === 'auth/email-already-in-use') {
@@ -250,6 +265,20 @@ export const useAuthStore = create<AuthState>()(
         console.error('Error saving customer to Firestore:', fErr);
       }
       set({ user: fallbackUser, isLoading: false });
+
+      // Send personalized welcome notification
+      useNotificationStore.getState().addNotification({
+        title: `Karibu YMA Energy, ${name}! ☀️`,
+        titleSw: `Karibu YMA Energy, ${name}! ☀️`,
+        message: 'Akaunti yako imefunguliwa kwa mafanikio. Unaweza kufuatilia maombi ya huduma, mafundi, na oda zako moja kwa moja.',
+        messageSw: 'Akaunti yako imefunguliwa kwa mafanikio. Unaweza kufuatilia maombi ya huduma, mafundi, na oda zako moja kwa moja.',
+        type: 'system',
+        isPush: true,
+        userId: fallbackUser.id,
+        userEmail: fallbackUser.email,
+        targetRole: 'CUSTOMER',
+      });
+
       return { success: true, user: fallbackUser };
     }
   },
@@ -351,6 +380,7 @@ export const useAuthStore = create<AuthState>()(
     } catch (err) {
       console.error('Error signing out from Firebase:', err);
     }
+    useNotificationStore.getState().handleUserLogout();
     set({ user: null });
   },
 

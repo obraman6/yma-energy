@@ -15,6 +15,7 @@ export interface CompanySettings {
   tutorialVideoTitle?: string;
   tutorialVideoDesc?: string;
   tutorialVideoAspectRatio?: 'auto' | '16:9' | '9:16' | '1:1';
+  enableShopModule?: boolean;
 }
 
 export const defaultCompanySettings: CompanySettings = {
@@ -39,6 +40,7 @@ export const defaultCompanySettings: CompanySettings = {
   tutorialVideoTitle: 'Jinsi ya Kutumia App ya YMA ENERGY GROUP',
   tutorialVideoDesc: 'Tazama video fupi kujifunza jinsi ya kununua bidhaa za sola, kuagiza huduma za ufungaji, kuomba fundi wa dharura, na kufuatilia oda yako moja kwa moja.',
   tutorialVideoAspectRatio: 'auto',
+  enableShopModule: true,
 };
 
 interface CompanySettingsState {
@@ -106,6 +108,7 @@ export const useCompanySettingsStore = create<CompanySettingsState>((set, get) =
             tutorialVideoTitle: remoteData.tutorialVideoTitle !== undefined ? remoteData.tutorialVideoTitle : defaultCompanySettings.tutorialVideoTitle,
             tutorialVideoDesc: remoteData.tutorialVideoDesc !== undefined ? remoteData.tutorialVideoDesc : defaultCompanySettings.tutorialVideoDesc,
             tutorialVideoAspectRatio: remoteData.tutorialVideoAspectRatio !== undefined ? remoteData.tutorialVideoAspectRatio : defaultCompanySettings.tutorialVideoAspectRatio,
+            enableShopModule: remoteData.enableShopModule !== undefined ? remoteData.enableShopModule : defaultCompanySettings.enableShopModule,
           };
           saveCompanySettingsToLocal(merged);
           set({ settings: merged, isLoading: false });

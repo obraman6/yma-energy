@@ -133,13 +133,29 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       console.error('Error creating service request in Firebase:', err);
     }
 
+    // Notify customer
+    useNotificationStore.getState().addNotification({
+      title: `Ombi la Huduma Limepokelewa: #${newReq.requestNumber}`,
+      titleSw: `Ombi la Huduma Limepokelewa: #${newReq.requestNumber}`,
+      message: `Habari ${newReq.customerName}, ombi lako la ${newReq.serviceName} limepokelewa. Mhandisi atawasiliana nawe hivi punde.`,
+      messageSw: `Habari ${newReq.customerName}, ombi lako la ${newReq.serviceName} limepokelewa. Mhandisi atawasiliana nawe hivi punde.`,
+      type: 'maintenance',
+      isPush: true,
+      userId: newReq.userId || newReq.phone,
+      targetRole: 'CUSTOMER',
+      url: '/account',
+    });
+
+    // Notify admin
     useNotificationStore.getState().addNotification({
       title: `Ombi Jipya la Huduma: #${newReq.requestNumber}`,
       titleSw: `Ombi Jipya la Huduma: #${newReq.requestNumber}`,
-      message: `Mteja ${newReq.customerName} amefanya ombi la huduma (${newReq.serviceName}). Simu: ${newReq.phone}.`,
-      messageSw: `Mteja ${newReq.customerName} amefanya ombi la huduma (${newReq.serviceName}). Simu: ${newReq.phone}.`,
+      message: `Mteja ${newReq.customerName} (${newReq.phone}) amefanya ombi la huduma (${newReq.serviceName}). Eneo: ${newReq.region}, ${newReq.district}.`,
+      messageSw: `Mteja ${newReq.customerName} (${newReq.phone}) amefanya ombi la huduma (${newReq.serviceName}). Eneo: ${newReq.region}, ${newReq.district}.`,
       type: 'maintenance',
       isPush: true,
+      targetRole: 'ADMIN',
+      url: '/admin',
     });
 
     return newReq;

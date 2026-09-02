@@ -24,6 +24,8 @@ import {
   ExternalLink,
   Cpu,
   Camera,
+  CheckCheck,
+  Trash2,
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -104,8 +106,8 @@ export const AccountView: React.FC<AccountViewProps> = ({
   const { warranties: rawWarranties, claims: rawClaims } = useWarrantyStore();
   const warranties = rawWarranties || [];
   const claims = rawClaims || [];
-  const { notifications: rawNotifications, markAsRead, markAllAsRead, clearAll } = useNotificationStore();
-  const notifications = rawNotifications || [];
+  const { notifications: rawNotifications, getUserNotifications, markAsRead, markAllAsRead, deleteNotification, clearAll } = useNotificationStore();
+  const notifications = useMemo(() => getUserNotifications(user), [getUserNotifications, user, rawNotifications]);
   const products = useProductStore((s) => s.products) || [];
   const reviews = useProductStore((s) => s.reviews) || [];
 
@@ -934,10 +936,24 @@ export const AccountView: React.FC<AccountViewProps> = ({
             className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50"
           >
             <div className="flex items-center gap-3">
-              <Bell className="w-5 h-5 text-amber-500" />
-              <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
-                {t('taarifaZako')} ({notifications.filter((n) => !n.isRead).length} Unread)
-              </span>
+              <div className="relative">
+                <Bell className="w-5 h-5 text-amber-500" />
+                {notifications.filter((n) => !n.isRead).length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping" />
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {t('taarifaZako')}
+                </span>
+                {notifications.filter((n) => !n.isRead).length > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white shadow-xs">
+                    {notifications.filter((n) => !n.isRead).length} {language === 'sw' ? 'Hazijasomwa' : 'Unread'}
+                  </span>
+                ) : (
+                  <span className="text-xs text-slate-400">({notifications.length})</span>
+                )}
+              </div>
             </div>
             {expandedIndex === 5 ? (
               <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -948,33 +964,82 @@ export const AccountView: React.FC<AccountViewProps> = ({
 
           {expandedIndex === 5 && (
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 space-y-3 text-xs">
-              <div className="flex justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-                <button onClick={markAllAsRead} className="font-bold text-amber-600 underline">
-                  Mark All Read
-                </button>
-                <button onClick={clearAll} className="font-bold text-rose-600 underline">
-                  Clear All
-                </button>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-600 dark:text-slate-400">
+                    {language === 'sw' ? 'Jumla ya Arifa' : 'Total Alerts'}: {notifications.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => markAllAsRead(user)}
+                    disabled={notifications.filter((n) => !n.isRead).length === 0}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold text-xs transition-all ${
+                      notifications.filter((n) => !n.isRead).length > 0
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm active:scale-95 cursor-pointer'
+                        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    <span>{t('markAllRead')}</span>
+                  </button>
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={() => clearAll(user)}
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                      title={t('clearAll')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
-                  onClick={() => markAsRead(n.id)}
-                  className={`p-3 rounded-xl border transition-colors cursor-pointer ${
-                    n.isRead
-                      ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
-                      : 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 font-bold'
-                  }`}
-                >
-                  <p className="text-slate-900 dark:text-slate-100">
-                    {language === 'sw' ? (n.titleSw || n.title) : n.title}
-                  </p>
-                  <p className="text-slate-500 font-normal">
-                    {language === 'sw' ? (n.messageSw || n.message) : n.message}
-                  </p>
+              {notifications.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 italic">
+                  {t('noNotifications')}
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-2">
+                  {notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => markAsRead(n.id)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer space-y-1 ${
+                        !n.isRead
+                          ? 'border-l-4 border-l-amber-500 bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-900/50 shadow-xs'
+                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-90 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                          {!n.isRead && (
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                          )}
+                          {language === 'sw' ? n.titleSw || n.title : n.title}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-slate-400 font-mono">{n.time}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNotification(n.id);
+                            }}
+                            className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors"
+                            title={language === 'sw' ? 'Futa arifa' : 'Delete'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-slate-600 dark:text-slate-300 font-normal pl-3.5">
+                        {language === 'sw' ? n.messageSw || n.message : n.message}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

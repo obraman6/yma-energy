@@ -3,6 +3,7 @@ import { Order, OrderStatus } from '../types';
 import { db } from '../lib/firebase';
 import { sendAdminEmailTrigger } from '../services/emailService';
 import { useProductStore } from './useProductStore';
+import { useNotificationStore } from './useNotificationStore';
 import {
   collection,
   onSnapshot,
@@ -84,6 +85,30 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
       useProductStore.getState().adjustStock(item.product.id, -item.quantity);
     });
 
+    // Trigger notifications
+    useNotificationStore.getState().addNotification({
+      title: `Oda Yako Imethibitishwa: #${newOrder.orderNumber}`,
+      titleSw: `Oda Yako Imethibitishwa: #${newOrder.orderNumber}`,
+      message: `Asante ${newOrder.customerName}! Oda yako ya TZS ${(newOrder.totalAmountTzs || 0).toLocaleString()} imepokelewa na inashughulikiwa.`,
+      messageSw: `Asante ${newOrder.customerName}! Oda yako ya TZS ${(newOrder.totalAmountTzs || 0).toLocaleString()} imepokelewa na inashughulikiwa.`,
+      type: 'order',
+      isPush: true,
+      userId: newOrder.userId || newOrder.customerPhone,
+      targetRole: 'CUSTOMER',
+      url: '/account',
+    });
+
+    useNotificationStore.getState().addNotification({
+      title: `🛒 Oda Mpya: #${newOrder.orderNumber}`,
+      titleSw: `🛒 Oda Mpya: #${newOrder.orderNumber}`,
+      message: `Mteja ${newOrder.customerName} (${newOrder.customerPhone}) ameweka oda ya TZS ${(newOrder.totalAmountTzs || 0).toLocaleString()}.`,
+      messageSw: `Mteja ${newOrder.customerName} (${newOrder.customerPhone}) ameweka oda ya TZS ${(newOrder.totalAmountTzs || 0).toLocaleString()}.`,
+      type: 'order',
+      isPush: true,
+      targetRole: 'ADMIN',
+      url: '/admin',
+    });
+
     // Trigger real-time admin email notification
     sendAdminEmailTrigger({
       type: 'order',
@@ -106,6 +131,7 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
   },
 
   updateOrderStatus: async (orderId, status) => {
+    const target = get().orders.find((o) => o.id === orderId);
     set((state) => ({
       orders: state.orders.map((o) => (o.id === orderId ? { ...o, status } : o)),
     }));
@@ -114,6 +140,20 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
       await updateDoc(doc(db, 'orders', orderId), { status });
     } catch (err) {
       console.error('Error updating order status in Firebase:', err);
+    }
+
+    if (target) {
+      useNotificationStore.getState().addNotification({
+        title: `📦 Mabadiliko ya Oda: #${target.orderNumber}`,
+        titleSw: `📦 Mabadiliko ya Oda: #${target.orderNumber}`,
+        message: `Hali ya oda yako imesasishwa kuwa: ${status}.`,
+        messageSw: `Hali ya oda yako imesasishwa kuwa: ${status}.`,
+        type: 'order',
+        isPush: true,
+        userId: target.userId || target.customerPhone,
+        targetRole: 'CUSTOMER',
+        url: '/account',
+      });
     }
   },
 

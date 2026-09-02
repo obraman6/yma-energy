@@ -1,7 +1,8 @@
 import React from 'react';
-import { Home, ShoppingBag, Wrench, ShieldAlert, User, Cpu } from 'lucide-react';
+import { Home, ShoppingBag, Wrench, ShieldAlert, User, Cpu, PhoneCall } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useCompanySettingsStore } from '../../store/useCompanySettingsStore';
 
 interface BottomNavProps {
   activeTab: string;
@@ -11,10 +12,14 @@ interface BottomNavProps {
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab }) => {
   const { t } = useLanguage();
   const { user } = useAuthStore();
+  const { settings } = useCompanySettingsStore();
+  const enableShopModule = settings.enableShopModule !== false;
 
   const tabs = [
     { id: 'home', label: t('navHome'), icon: Home },
-    { id: 'shop', label: t('navShop'), icon: ShoppingBag },
+    ...(enableShopModule
+      ? [{ id: 'shop', label: t('navShop'), icon: ShoppingBag }]
+      : [{ id: 'contact', label: t('navContact'), icon: PhoneCall }]),
     { id: 'services', label: t('navServices'), icon: Wrench },
     { id: 'repairs', label: t('navRepairs'), icon: ShieldAlert },
     {
