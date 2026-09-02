@@ -1,9 +1,10 @@
 import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useCompanySettingsStore } from '../store/useCompanySettingsStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 export interface EmailTriggerPayload {
-  type: 'order' | 'repair' | 'inquiry';
+  type: 'order' | 'repair' | 'inquiry' | 'service';
   data: any;
   targetEmail?: string;
 }
@@ -11,7 +12,28 @@ export interface EmailTriggerPayload {
 export async function sendAdminEmailTrigger(payload: EmailTriggerPayload): Promise<boolean> {
   try {
     const configuredEmail = useCompanySettingsStore.getState().settings?.companyEmail || '';
-    const recipientEmail = payload.targetEmail || configuredEmail;
+
+    // Collect emails of all active administrators: SUPER_ADMIN, STAFF_ADMIN, ADMIN, MANAGER
+    const allUsers = useAuthStore.getState().users || [];
+    const staffAdminEmails = allUsers
+      .filter(
+        (u) =>
+          u.status !== 'suspended' &&
+          (u.role === 'SUPER_ADMIN' ||
+            u.role === 'STAFF_ADMIN' ||
+            u.role === 'ADMIN' ||
+            u.role === 'MANAGER')
+      )
+      .map((u) => (u.email || '').trim().toLowerCase())
+      .filter(Boolean);
+
+    const emailList = Array.from(
+      new Set(
+        [configuredEmail.trim().toLowerCase(), ...staffAdminEmails, payload.targetEmail?.trim().toLowerCase()].filter(Boolean)
+      )
+    );
+
+    const recipientEmail = emailList.length > 0 ? emailList.join(', ') : configuredEmail || 'support@ymaenergy.co.tz';
 
     // 1. Call Backend API trigger
     const res = await fetch('/api/notify-admin-email', {

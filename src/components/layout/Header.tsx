@@ -153,7 +153,14 @@ export const Header: React.FC<HeaderProps> = ({
     ...(enableShopModule ? [{ id: 'cart', label: t('cart'), icon: ShoppingCart, badge: cartCount }] : []),
     {
       id: 'account',
-      label: user ? (user.role === 'ADMIN' ? t('adminPanel') : t('account')) : t('login'),
+      label: user
+        ? user.role === 'SUPER_ADMIN' ||
+          user.role === 'STAFF_ADMIN' ||
+          user.role === 'ADMIN' ||
+          user.role === 'MANAGER'
+          ? t('adminPanel')
+          : t('account')
+        : t('login'),
       icon: User,
       action: !user ? openAuthModal : undefined,
     },

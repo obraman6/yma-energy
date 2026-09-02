@@ -24,8 +24,22 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab })
     { id: 'repairs', label: t('navRepairs'), icon: ShieldAlert },
     {
       id: 'account',
-      label: user?.role === 'ADMIN' ? t('adminPanel') : t('navAccount'),
-      icon: user?.role === 'ADMIN' ? Cpu : User,
+      label:
+        user &&
+        (user.role === 'SUPER_ADMIN' ||
+          user.role === 'STAFF_ADMIN' ||
+          user.role === 'ADMIN' ||
+          user.role === 'MANAGER')
+          ? t('adminPanel')
+          : t('navAccount'),
+      icon:
+        user &&
+        (user.role === 'SUPER_ADMIN' ||
+          user.role === 'STAFF_ADMIN' ||
+          user.role === 'ADMIN' ||
+          user.role === 'MANAGER')
+          ? Cpu
+          : User,
     },
   ];
 

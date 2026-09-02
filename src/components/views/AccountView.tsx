@@ -111,37 +111,44 @@ export const AccountView: React.FC<AccountViewProps> = ({
   const products = useProductStore((s) => s.products) || [];
   const reviews = useProductStore((s) => s.reviews) || [];
 
+  const isElevatedAdmin = !!user && (
+    user.role === 'SUPER_ADMIN' ||
+    user.role === 'ADMIN' ||
+    user.role === 'STAFF_ADMIN' ||
+    user.role === 'MANAGER'
+  );
+
   const myOrders = useMemo(() => {
     if (!user) return [];
-    if (user.role === 'ADMIN') return orders;
+    if (isElevatedAdmin) return orders;
     return orders.filter(
       (o) => o.userId === user.id || (user.phone && o.customerPhone === user.phone) || (user.name && o.customerName === user.name)
     );
-  }, [orders, user]);
+  }, [orders, user, isElevatedAdmin]);
 
   const myServiceRequests = useMemo(() => {
     if (!user) return [];
-    if (user.role === 'ADMIN') return serviceRequests;
+    if (isElevatedAdmin) return serviceRequests;
     return serviceRequests.filter(
       (sr) => sr.userId === user.id || (user.phone && sr.phone === user.phone) || (user.name && sr.customerName === user.name)
     );
-  }, [serviceRequests, user]);
+  }, [serviceRequests, user, isElevatedAdmin]);
 
   const myRepairRequests = useMemo(() => {
     if (!user) return [];
-    if (user.role === 'ADMIN') return repairRequests;
+    if (isElevatedAdmin) return repairRequests;
     return repairRequests.filter(
       (rr) => rr.userId === user.id || (user.phone && rr.phone === user.phone) || (user.name && rr.customerName === user.name)
     );
-  }, [repairRequests, user]);
+  }, [repairRequests, user, isElevatedAdmin]);
 
   const myWarranties = useMemo(() => {
     if (!user) return [];
-    if (user.role === 'ADMIN') return warranties;
+    if (isElevatedAdmin) return warranties;
     return warranties.filter(
       (w) => w.userId === user.id
     );
-  }, [warranties, user]);
+  }, [warranties, user, isElevatedAdmin]);
 
   // Accordion expanded state
   const [expandedIndex, setExpandedIndex] = useState<number | null>(1); // Default expand Orders
@@ -185,7 +192,13 @@ export const AccountView: React.FC<AccountViewProps> = ({
           message: res.message || 'Tafadhali kagua email au password na ujaribu tena.',
           type: 'warning',
         });
-      } else if (res.user && (res.user.role === 'ADMIN' || res.user.role === 'MANAGER')) {
+      } else if (
+        res.user &&
+        (res.user.role === 'SUPER_ADMIN' ||
+          res.user.role === 'STAFF_ADMIN' ||
+          res.user.role === 'ADMIN' ||
+          res.user.role === 'MANAGER')
+      ) {
         onOpenAdminConsole();
       }
     } else if (authMode === 'forgot') {

@@ -139,6 +139,45 @@ app.post('/api/notify-admin-email', async (req, res) => {
           </div>
         </div>
       `;
+    } else if (type === 'service') {
+      const requestNumber = data.requestNumber || 'SRV-NEW';
+      const customerName = data.customerName || 'Mteja';
+      const serviceName = data.serviceName || 'Huduma ya Sola';
+      const phone = data.phone || 'N/A';
+      const location = data.location || 'N/A';
+      const preferredDate = data.preferredDate || 'N/A';
+      const timeSlot = data.timeSlot || 'Anytime';
+      const notes = data.notes || 'Hakuna maelezo ya ziada';
+
+      subject = `🛠️ [YMA SERVICE ALERT] New Service Booking: ${requestNumber} - ${customerName} (${serviceName})`;
+      htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e293b; max-width: 600px; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <div style="background: #0284c7; padding: 16px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">YMA SERVICE BOOKING ALERT</h1>
+            <p style="color: #bae6fd; margin: 4px 0 0 0; font-size: 12px;">Ombi Jipya la Huduma ya Sola</p>
+          </div>
+          
+          <h2 style="color: #0369a1; font-size: 18px;">Ombi la Huduma: ${serviceName} (${requestNumber})</h2>
+          <p>Mteja ameweka ombi jipya la huduma ya solar kupitia tovuti ya YMA Energy.</p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+            <tr style="background: #f8fafc;"><td style="padding: 8px; font-weight: bold; border: 1px solid #cbd5e1;">Mteja:</td><td style="padding: 8px; border: 1px solid #cbd5e1;">${customerName}</td></tr>
+            <tr><td style="padding: 8px; font-weight: bold; border: 1px solid #cbd5e1;">Simu:</td><td style="padding: 8px; border: 1px solid #cbd5e1;"><a href="tel:${phone}">${phone}</a></td></tr>
+            <tr style="background: #f8fafc;"><td style="padding: 8px; font-weight: bold; border: 1px solid #cbd5e1;">Huduma:</td><td style="padding: 8px; font-weight: bold; color: #0284c7; border: 1px solid #cbd5e1;">${serviceName}</td></tr>
+            <tr><td style="padding: 8px; font-weight: bold; border: 1px solid #cbd5e1;">Mahali:</td><td style="padding: 8px; border: 1px solid #cbd5e1;">${location}</td></tr>
+            <tr style="background: #f8fafc;"><td style="padding: 8px; font-weight: bold; border: 1px solid #cbd5e1;">Tarehe & Wakati:</td><td style="padding: 8px; border: 1px solid #cbd5e1;">${preferredDate} (${timeSlot})</td></tr>
+          </table>
+
+          <h3 style="font-size: 14px; margin-top: 15px; color: #334155;">Maelezo ya Ziada:</h3>
+          <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px; font-style: italic; margin-bottom: 15px;">
+            "${notes}"
+          </div>
+
+          <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
+            <p>Tafadhali ingia kwenye Admin Dashboard ili kupanga mhandisi (Assign Engineer/Technician).</p>
+          </div>
+        </div>
+      `;
     } else {
       subject = `📩 [YMA NOTIFICATION] Admin Alert Trigger: ${type}`;
       htmlContent = `

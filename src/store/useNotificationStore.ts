@@ -16,7 +16,7 @@ export interface AppNotification {
   isPush: boolean;
   userId?: string; // Target specific user (e.g. customer)
   userEmail?: string; // Target specific user email
-  targetRole?: 'ALL' | 'ADMIN' | 'MANAGER' | 'TECHNICIAN' | 'CUSTOMER';
+  targetRole?: 'ALL' | 'ADMIN' | 'STAFF_ADMIN' | 'SUPER_ADMIN' | 'MANAGER' | 'TECHNICIAN' | 'CUSTOMER';
   isGlobal?: boolean; // Broadcast to everyone
   url?: string; // Deep-link to open when clicked
   createdAt?: string;
@@ -100,6 +100,7 @@ export const useNotificationStore = create<NotificationState>()(
         if (get().isFirebaseSynced) return;
         set({ isFirebaseSynced: true });
 
+        let isInitial = true;
         const notifsRef = collection(db, 'notifications');
         onSnapshot(
           notifsRef,
@@ -115,6 +116,89 @@ export const useNotificationStore = create<NotificationState>()(
               if (timeA && timeB) return timeB - timeA;
               return b.id > a.id ? 1 : -1;
             });
+
+            // If new notifications arrive in real-time from other devices/customers
+            if (!isInitial) {
+              snapshot.docChanges().forEach((change) => {
+                if (change.type === 'added') {
+                  const newDoc = change.doc.data() as AppNotification;
+                  if (newDoc && !cleared.includes(newDoc.id)) {
+                    // Check if recently added (last 30s)
+                    const notifAgeMs = newDoc.createdAt ? Date.now() - new Date(newDoc.createdAt).getTime() : 0;
+                    if (notifAgeMs < 30000) {
+                      try {
+                        // Dynamically check current auth role & identity
+                        const authStorage = localStorage.getItem('yma-auth-storage');
+                        let currentRole = '';
+                        let currentUserId = '';
+                        let currentUserEmail = '';
+                        let currentUserPhone = '';
+                        if (authStorage) {
+                          const parsed = JSON.parse(authStorage);
+                          currentRole = (parsed?.state?.user?.role || '').toUpperCase();
+                          currentUserId = parsed?.state?.user?.id || parsed?.state?.user?.uid || '';
+                          currentUserEmail = (parsed?.state?.user?.email || '').toLowerCase().trim();
+                          currentUserPhone = (parsed?.state?.user?.phone || '').trim();
+                        }
+
+                        const isElevatedAdmin =
+                          currentRole === 'SUPER_ADMIN' ||
+                          currentRole === 'ADMIN' ||
+                          currentRole === 'STAFF_ADMIN' ||
+                          currentRole === 'MANAGER';
+
+                        let shouldAlert = false;
+
+                        // 1. If notification is specifically for CUSTOMER
+                        if (newDoc.targetRole === 'CUSTOMER') {
+                          // ONLY alert if this notification belongs to THIS user
+                          if (
+                            (currentUserId && (newDoc.userId === currentUserId || (currentUserPhone && newDoc.userId === currentUserPhone))) ||
+                            (currentUserEmail && newDoc.userEmail && newDoc.userEmail.toLowerCase() === currentUserEmail)
+                          ) {
+                            shouldAlert = true;
+                          }
+                          // Elevated admin must NOT get customer confirmation alerts
+                        } else if (
+                          newDoc.targetRole === 'ADMIN' ||
+                          newDoc.targetRole === 'STAFF_ADMIN' ||
+                          newDoc.targetRole === 'SUPER_ADMIN' ||
+                          newDoc.targetRole === 'MANAGER'
+                        ) {
+                          // ONLY alert if the logged-in user is an elevated admin
+                          if (isElevatedAdmin) {
+                            shouldAlert = true;
+                          }
+                        } else if (newDoc.targetRole === 'TECHNICIAN') {
+                          if (currentRole === 'TECHNICIAN') {
+                            shouldAlert = true;
+                          }
+                        } else if (newDoc.isGlobal) {
+                          shouldAlert = true;
+                        } else if (
+                          (currentUserId && (newDoc.userId === currentUserId || (currentUserPhone && newDoc.userId === currentUserPhone))) ||
+                          (currentUserEmail && newDoc.userEmail && newDoc.userEmail.toLowerCase() === currentUserEmail)
+                        ) {
+                          shouldAlert = true;
+                        }
+
+                        if (shouldAlert) {
+                          if (get().isSoundEnabled) {
+                            playChimeSound();
+                          }
+                          if (newDoc.isPush) {
+                            get().sendSystemPush(newDoc.title, newDoc.message, newDoc.url || '/');
+                          }
+                        }
+                      } catch (e) {
+                        // ignore real-time alert error
+                      }
+                    }
+                  }
+                }
+              });
+            }
+            isInitial = false;
 
             set({
               notifications: remoteNotifs,
@@ -136,16 +220,59 @@ export const useNotificationStore = create<NotificationState>()(
         const userRole = (currentUser.role || '').toUpperCase();
         const userEmail = (currentUser.email || '').trim().toLowerCase();
         const userId = currentUser.id || currentUser.uid || '';
+        const userPhone = (currentUser.phone || '').trim();
 
-        if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-          // Admins & Managers see system alerts, stock alerts, orders, repair updates, and their own
+        // All administrative and staff tiers: SUPER_ADMIN, STAFF_ADMIN, ADMIN, MANAGER
+        const isElevatedAdmin =
+          userRole === 'SUPER_ADMIN' ||
+          userRole === 'ADMIN' ||
+          userRole === 'STAFF_ADMIN' ||
+          userRole === 'MANAGER';
+
+        if (isElevatedAdmin) {
+          // Admins (SUPER_ADMIN, STAFF_ADMIN, ADMIN, MANAGER) see:
+          // 1. Admin broadcasts & alerts (targetRole: ADMIN, STAFF_ADMIN, SUPER_ADMIN, MANAGER, ALL)
+          // 2. Notifications targeted personally to this admin
+          // 3. Global announcements not restricted to customers
+          // CRITICAL: Must NEVER show customer confirmation messages (targetRole: CUSTOMER) unless the admin personally placed it
           return all.filter((n) => {
-            if (n.targetRole === 'ADMIN' || n.targetRole === 'MANAGER' || n.targetRole === 'ALL') return true;
-            if (n.isGlobal) return true;
-            if (n.userId === userId) return true;
-            if (n.userEmail && n.userEmail.toLowerCase() === userEmail) return true;
-            // Also show system & maintenance notifications
-            if (n.type === 'system' || n.type === 'maintenance') return true;
+            // If target is CUSTOMER:
+            if (n.targetRole === 'CUSTOMER') {
+              const isMyPersonal =
+                (n.userId && (n.userId === userId || n.userId === currentUser.uid || (userPhone && n.userId === userPhone))) ||
+                (n.userEmail && userEmail && n.userEmail.toLowerCase() === userEmail);
+              return Boolean(isMyPersonal);
+            }
+
+            // If target is ADMIN roles
+            if (
+              n.targetRole === 'ADMIN' ||
+              n.targetRole === 'STAFF_ADMIN' ||
+              n.targetRole === 'SUPER_ADMIN' ||
+              n.targetRole === 'MANAGER' ||
+              n.targetRole === 'ALL'
+            ) {
+              return true;
+            }
+
+            // Explicit personal notification to this user
+            if (n.userId && (n.userId === userId || n.userId === currentUser.uid || (userPhone && n.userId === userPhone))) {
+              return true;
+            }
+            if (n.userEmail && userEmail && n.userEmail.toLowerCase() === userEmail) {
+              return true;
+            }
+
+            // Global announcements (must not be restricted to customers)
+            if (n.isGlobal) {
+              return true;
+            }
+
+            // System alerts (e.g. low stock, server notices) that do not belong to a specific customer
+            if (n.type === 'system' && !n.userId) {
+              return true;
+            }
+
             return false;
           });
         }
@@ -153,23 +280,40 @@ export const useNotificationStore = create<NotificationState>()(
         if (userRole === 'TECHNICIAN') {
           // Technicians see jobs, assignments, technician alerts, and their own
           return all.filter((n) => {
+            if (n.targetRole === 'CUSTOMER') {
+              const isMyPersonal =
+                (n.userId && (n.userId === userId || n.userId === currentUser.uid || (userPhone && n.userId === userPhone))) ||
+                (n.userEmail && userEmail && n.userEmail.toLowerCase() === userEmail);
+              return Boolean(isMyPersonal);
+            }
             if (n.targetRole === 'TECHNICIAN' || n.targetRole === 'ALL') return true;
-            if (n.isGlobal) return true;
-            if (n.userId === userId) return true;
-            if (n.userEmail && n.userEmail.toLowerCase() === userEmail) return true;
-            if (n.type === 'maintenance' && !n.userId) return true;
+            if (n.userId && (n.userId === userId || n.userId === currentUser.uid || (userPhone && n.userId === userPhone))) return true;
+            if (n.userEmail && userEmail && n.userEmail.toLowerCase() === userEmail) return true;
+            if (n.isGlobal && (n.targetRole as string) !== 'ADMIN' && (n.targetRole as string) !== 'STAFF_ADMIN') return true;
             return false;
           });
         }
 
         // Standard CUSTOMER: ONLY show items explicitly for this user or global announcements
         return all.filter((n) => {
+          // Prevent customers from seeing admin-targeted notifications
+          const role = (n.targetRole || '') as string;
+          if (
+            role === 'ADMIN' ||
+            role === 'STAFF_ADMIN' ||
+            role === 'SUPER_ADMIN' ||
+            role === 'MANAGER' ||
+            role === 'TECHNICIAN'
+          ) {
+            return false;
+          }
+
           // Explicit user match
-          if (n.userId && (n.userId === userId || n.userId === currentUser.uid)) return true;
-          if (n.userEmail && n.userEmail.toLowerCase() === userEmail) return true;
+          if (n.userId && (n.userId === userId || n.userId === currentUser.uid || (userPhone && n.userId === userPhone))) return true;
+          if (n.userEmail && userEmail && n.userEmail.toLowerCase() === userEmail) return true;
           // Global announcements (must not be targeted to staff)
           if (n.isGlobal && (!n.targetRole || n.targetRole === 'ALL' || n.targetRole === 'CUSTOMER')) return true;
-          if (n.targetRole === 'CUSTOMER' && !n.userId) return true;
+          if (n.targetRole === 'CUSTOMER' && !n.userId && !n.userEmail) return true;
           return false;
         });
       },

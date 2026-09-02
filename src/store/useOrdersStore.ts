@@ -94,6 +94,7 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
       type: 'order',
       isPush: true,
       userId: newOrder.userId || newOrder.customerPhone,
+      userEmail: newOrder.customerEmail,
       targetRole: 'CUSTOMER',
       url: '/account',
     });

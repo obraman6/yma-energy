@@ -63,7 +63,13 @@ export const useAuthStore = create<AuthState>()(
                 if (emailKey) {
                   // Keep admin/manager role if duplicates exist
                   const existing = userMap.get(emailKey);
-                  if (!existing || u.role === 'ADMIN' || u.role === 'MANAGER') {
+                  if (
+                    !existing ||
+                    u.role === 'SUPER_ADMIN' ||
+                    u.role === 'STAFF_ADMIN' ||
+                    u.role === 'ADMIN' ||
+                    u.role === 'MANAGER'
+                  ) {
                     userMap.set(emailKey, u);
                   }
                 } else if (u.id) {

@@ -101,6 +101,7 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
       type: 'maintenance',
       isPush: true,
       userId: newTicket.userId || newTicket.phone,
+      userEmail: (newTicket as any).email,
       targetRole: 'CUSTOMER',
       url: '/account',
     });

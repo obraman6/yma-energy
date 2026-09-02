@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { SolarService, ServiceRequest, ServiceStatus } from '../types';
 import { db } from '../lib/firebase';
 import { useNotificationStore } from './useNotificationStore';
+import { sendAdminEmailTrigger } from '../services/emailService';
 import {
   collection,
   onSnapshot,
@@ -160,11 +161,12 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       type: 'maintenance',
       isPush: true,
       userId: newReq.userId || newReq.phone,
+      userEmail: newReq.email,
       targetRole: 'CUSTOMER',
       url: '/account',
     });
 
-    // Notify admin
+    // Notify admin (all roles including STAFF_ADMIN receive this)
     useNotificationStore.getState().addNotification({
       title: `Ombi Jipya la Huduma: #${newReq.requestNumber}`,
       titleSw: `Ombi Jipya la Huduma: #${newReq.requestNumber}`,
@@ -175,6 +177,21 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       targetRole: 'ADMIN',
       url: '/admin',
     });
+
+    // Trigger real-time admin email notification for all admins & staff
+    sendAdminEmailTrigger({
+      type: 'service',
+      data: {
+        requestNumber: newReq.requestNumber,
+        customerName: newReq.customerName,
+        phone: newReq.phone,
+        serviceName: newReq.serviceName,
+        location: `${newReq.region}, ${newReq.district}`,
+        preferredDate: newReq.preferredDate,
+        timeSlot: newReq.timeSlot,
+        notes: newReq.notes,
+      },
+    }).catch((e) => console.error('Error triggering service booking email alert:', e));
 
     return newReq;
   },
