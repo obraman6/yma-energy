@@ -407,7 +407,7 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                     <div>
                       <p className="text-slate-500 font-medium">Huduma / Service:</p>
                       <strong className="text-slate-900 dark:text-slate-100 font-bold block">{s.serviceName}</strong>
-                      <p className="text-slate-500 font-medium mt-1">Aina ya Paa / Roof Type:</p>
+                      <p className="text-slate-500 font-medium mt-1">Aina ya Nyumba / House Type:</p>
                       <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px]">
                         {s.roofType}
                       </span>

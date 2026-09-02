@@ -46,7 +46,7 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
   const [district, setDistrict] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
   const [timeSlot, setTimeSlot] = useState<'Morning' | 'Afternoon' | 'Evening'>('Morning');
-  const [roofType, setRoofType] = useState('Mabati');
+  const [roofType, setRoofType] = useState('Bungalow');
   const [priority, setPriority] = useState<'Normal' | 'Urgent'>('Normal');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -277,32 +277,32 @@ export const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
                 </div>
               </div>
 
-              {/* Roof Type & Priority */}
+              {/* House Type & Priority */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    {t('roofType')} ({language === 'sw' ? 'Muundo wa Paa / Jengo' : 'Roof Structure Type'}) *
+                    {language === 'sw' ? 'Aina ya Nyumba (House Type) *' : 'House Type *'}
                   </label>
                   <input
                     type="text"
                     value={roofType}
                     onChange={(e) => setRoofType(e.target.value)}
-                    placeholder={language === 'sw' ? 'Andika aina ya paa (mf. Mabati, Vigae, Zege, Makuti...)' : 'Type roof type (e.g. Iron Sheet, Tiles, Concrete...)'}
-                    list="roof-structure-suggestions"
+                    placeholder={language === 'sw' ? 'Andika au chagua (mf. Bungalow, Ghorofa, Villa, Ofisi...)' : 'Type house type (e.g. Bungalow, Storey Building, Office, Villa...)'}
+                    list="house-type-suggestions"
                     required
                     className="w-full p-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
-                  <datalist id="roof-structure-suggestions">
-                    <option value="Mabati (Iron Sheet)" />
-                    <option value="Vigae (Tiles)" />
-                    <option value="Zege (Concrete Slab)" />
-                    <option value="Muundo wa Chini (Ground Mount)" />
-                    <option value="Makuti" />
-                    <option value="Asbestos" />
-                    <option value="Gorofa / Balcony" />
+                  <datalist id="house-type-suggestions">
+                    <option value="Bungalow (Nyumba ya Chini)" />
+                    <option value="Ghorofa (Storey Building)" />
+                    <option value="Apartment / Makazi" />
+                    <option value="Villa / Mjengo wa Kisasa" />
+                    <option value="Ofisi / Jengo la Biashara (Commercial)" />
+                    <option value="Kiwanda / Ghala (Warehouse)" />
+                    <option value="Kibanda / Nyumba Ndogo" />
                   </datalist>
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {['Mabati', 'Vigae', 'Zege', 'Ground Mount'].map((suggested) => (
+                    {['Bungalow', 'Ghorofa', 'Villa', 'Ofisi / Biashara', 'Kiwanda'].map((suggested) => (
                       <button
                         key={suggested}
                         type="button"

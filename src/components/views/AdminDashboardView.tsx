@@ -990,7 +990,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       {((sr.status as string) === 'Completed' || (sr.status as string) === 'Imekamilika') ? '✅ ' : ''}{sr.status}
                     </span>
                   </div>
-                  <p>Client: {sr.customerName} ({sr.phone}) - {sr.region}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p>Client: <span className="font-semibold text-slate-800 dark:text-slate-200">{sr.customerName}</span> ({sr.phone}) - {sr.region}{sr.district ? `, ${sr.district}` : ''}</p>
+                    {sr.roofType && (
+                      <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-500/20">
+                        Nyumba / House: {sr.roofType}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-2">
                       <select
