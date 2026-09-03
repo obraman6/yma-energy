@@ -3,6 +3,7 @@ import { SolarService, ServiceRequest, ServiceStatus } from '../types';
 import { db } from '../lib/firebase';
 import { useNotificationStore } from './useNotificationStore';
 import { sendAdminEmailTrigger } from '../services/emailService';
+import { sendCustomerSms } from '../services/smsService';
 import {
   collection,
   onSnapshot,
@@ -268,6 +269,19 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
         type: 'maintenance',
         isPush: true,
       });
+
+      // Send real-time SMS to Customer notifying them of the assigned technician
+      if (target.phone) {
+        sendCustomerSms({
+          recipient: target.phone,
+          customerName: target.customerName,
+          requestNumber: target.requestNumber,
+          serviceName: target.serviceName,
+          technicianName: engineerName,
+          technicianPhone: assignedPhone,
+          type: 'technician_assigned',
+        }).catch((err) => console.error('Error dispatching technician assignment SMS to customer:', err));
+      }
     }
   },
 
@@ -349,10 +363,25 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
         type: 'maintenance',
         isPush: true,
       });
+
+      // If job is completed, send instant SMS confirmation to the customer
+      if (isCompleted && target.phone) {
+        sendCustomerSms({
+          recipient: target.phone,
+          customerName: target.customerName,
+          requestNumber: target.requestNumber,
+          serviceName: target.serviceName,
+          technicianName: target.assignedTechnician || 'Mhandisi Wetu',
+          technicianPhone: techPhone,
+          type: 'job_completed',
+        }).catch((err) => console.error('Error dispatching job completion SMS to customer:', err));
+      }
     }
   },
 
   updateRequestStatus: async (requestId, status) => {
+    const target = get().serviceRequests.find((r) => r.id === requestId);
+
     set((state) => ({
       serviceRequests: state.serviceRequests.map((r) =>
         r.id === requestId ? { ...r, status } : r
@@ -363,6 +392,22 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       await updateDoc(doc(db, 'serviceRequests', requestId), { status });
     } catch (err) {
       console.error('Error updating request status in Firebase:', err);
+    }
+
+    // If marked completed by admin, send confirmation SMS to customer
+    if (target && target.phone) {
+      const isCompleted = (status as string) === 'Completed' || (status as string) === 'Imekamilika';
+      if (isCompleted) {
+        sendCustomerSms({
+          recipient: target.phone,
+          customerName: target.customerName,
+          requestNumber: target.requestNumber,
+          serviceName: target.serviceName,
+          technicianName: target.assignedTechnician || 'Mhandisi Wetu',
+          technicianPhone: target.assignedTechnicianPhone,
+          type: 'job_completed',
+        }).catch((err) => console.error('Error dispatching completion SMS to customer (admin):', err));
+      }
     }
   },
 

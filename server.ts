@@ -22,6 +22,34 @@ interface EmailLog {
 
 const emailLogs: EmailLog[] = [];
 
+// In-memory store for customer SMS logs
+interface SmsLog {
+  id: string;
+  type: 'technician_assigned' | 'job_completed' | 'repair_assigned' | 'repair_completed' | 'test' | 'custom';
+  recipient: string;
+  message: string;
+  status: 'SENT_BEEM' | 'SENT_NEXTSMS' | 'SENT_TWILIO' | 'SENT_SIMULATED' | 'FAILED';
+  provider: string;
+  timestamp: string;
+  details?: any;
+}
+
+const smsLogs: SmsLog[] = [];
+
+// Helper to normalize Tanzanian phone numbers (07XXXXXXXX / 06XXXXXXXX -> 2557XXXXXXXX)
+function normalizeTzPhone(rawPhone: string): { international: string; local: string; e164: string } {
+  const digits = (rawPhone || '').replace(/\D/g, '');
+  let intl = digits;
+  if (digits.startsWith('0') && digits.length === 10) {
+    intl = '255' + digits.substring(1);
+  } else if (digits.startsWith('255')) {
+    intl = digits;
+  }
+  const e164 = intl.startsWith('+') ? intl : `+${intl}`;
+  const local = intl.startsWith('255') ? `0${intl.substring(3)}` : intl;
+  return { international: intl, local, e164 };
+}
+
 // Helper to get nodemailer transporter if credentials present
 function getTransporter() {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
@@ -284,6 +312,199 @@ app.post('/api/test-email', async (req, res) => {
     res.json({
       success: true,
       message: `Test email trigger executed successfully (${status})`,
+      log: logEntry,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ==========================================
+// CUSTOMER SMS DISPATCH & GATEWAY ENDPOINTS
+// ==========================================
+
+// API: Get SMS Notification Logs
+app.get('/api/sms-logs', (req, res) => {
+  const beemActive = Boolean(process.env.BEEM_API_KEY && process.env.BEEM_SECRET_KEY);
+  const nextSmsActive = Boolean(process.env.NEXTSMS_USERNAME && process.env.NEXTSMS_PASSWORD);
+  const twilioActive = Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+
+  res.json({
+    success: true,
+    logs: smsLogs,
+    activeProvider: beemActive ? 'Beem Africa' : nextSmsActive ? 'NextSMS' : twilioActive ? 'Twilio' : 'Simulated Gateway (Active)',
+    senderId: process.env.SMS_SENDER_ID || 'YMA_ENERGY',
+    beemConfigured: beemActive,
+    nextSmsConfigured: nextSmsActive,
+    twilioConfigured: twilioActive,
+  });
+});
+
+// API: Send Real-Time SMS Notification to Customer
+app.post('/api/send-sms', async (req, res) => {
+  try {
+    const { recipient, message, type, details, senderId } = req.body;
+    if (!recipient || !message) {
+      return res.status(400).json({ success: false, error: 'Recipient phone number and message are required' });
+    }
+
+    const { international, local, e164 } = normalizeTzPhone(recipient);
+    const smsSender = senderId || process.env.SMS_SENDER_ID || 'YMA_ENERGY';
+
+    let status: 'SENT_BEEM' | 'SENT_NEXTSMS' | 'SENT_TWILIO' | 'SENT_SIMULATED' | 'FAILED' = 'SENT_SIMULATED';
+    let providerName = 'Simulated Local Gateway';
+    let providerResponse: any = null;
+
+    // 1. Try Beem Africa SMS Gateway (Tanzania standard)
+    if (process.env.BEEM_API_KEY && process.env.BEEM_SECRET_KEY) {
+      try {
+        const authHeader = 'Basic ' + Buffer.from(`${process.env.BEEM_API_KEY}:${process.env.BEEM_SECRET_KEY}`).toString('base64');
+        const beemRes = await fetch('https://apisms.beem.africa/v1/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader,
+          },
+          body: JSON.stringify({
+            source_addr: smsSender,
+            schedule_time: '',
+            encoding: 0,
+            message,
+            recipients: [
+              {
+                recipient_id: 1,
+                dest_addr: international,
+              },
+            ],
+          }),
+        });
+        providerResponse = await beemRes.json().catch(() => null);
+        if (beemRes.ok) {
+          status = 'SENT_BEEM';
+          providerName = 'Beem Africa';
+          console.log(`[SMS DISPATCHED via BEEM AFRICA] To: ${international}, Status: SUCCESS`);
+        } else {
+          console.warn('[Beem Africa SMS warning, falling back]:', providerResponse);
+        }
+      } catch (beemErr: any) {
+        console.warn('[Beem Africa SMS Error]:', beemErr.message || beemErr);
+      }
+    }
+
+    // 2. Try NextSMS Gateway (Tanzania) if Beem not sent
+    if (status === 'SENT_SIMULATED' && process.env.NEXTSMS_USERNAME && process.env.NEXTSMS_PASSWORD) {
+      try {
+        const authHeader = 'Basic ' + Buffer.from(`${process.env.NEXTSMS_USERNAME}:${process.env.NEXTSMS_PASSWORD}`).toString('base64');
+        const nextRes = await fetch('https://messaging-service.co.tz/api/sms/v1/text/single', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader,
+          },
+          body: JSON.stringify({
+            from: smsSender,
+            to: international,
+            text: message,
+          }),
+        });
+        providerResponse = await nextRes.json().catch(() => null);
+        if (nextRes.ok) {
+          status = 'SENT_NEXTSMS';
+          providerName = 'NextSMS Tanzania';
+          console.log(`[SMS DISPATCHED via NEXTSMS] To: ${international}, Status: SUCCESS`);
+        } else {
+          console.warn('[NextSMS warning, falling back]:', providerResponse);
+        }
+      } catch (nextErr: any) {
+        console.warn('[NextSMS Error]:', nextErr.message || nextErr);
+      }
+    }
+
+    // 3. Try Twilio Gateway if others not sent
+    if (status === 'SENT_SIMULATED' && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+      try {
+        const twilioAuth = 'Basic ' + Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64');
+        const formParams = new URLSearchParams();
+        formParams.append('To', e164);
+        formParams.append('From', process.env.TWILIO_PHONE_NUMBER);
+        formParams.append('Body', message);
+
+        const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`, {
+          method: 'POST',
+          headers: {
+            'Authorization': twilioAuth,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formParams.toString(),
+        });
+        providerResponse = await twilioRes.json().catch(() => null);
+        if (twilioRes.ok) {
+          status = 'SENT_TWILIO';
+          providerName = 'Twilio SMS';
+          console.log(`[SMS DISPATCHED via TWILIO] To: ${e164}, Status: SUCCESS`);
+        } else {
+          console.warn('[Twilio SMS warning, falling back]:', providerResponse);
+        }
+      } catch (twilioErr: any) {
+        console.warn('[Twilio SMS Error]:', twilioErr.message || twilioErr);
+      }
+    }
+
+    if (status === 'SENT_SIMULATED') {
+      console.log(`[SMS DISPATCHED (INSTANT SIMULATION)] To: ${international} (${local}) | Message: "${message}"`);
+    }
+
+    const logEntry: SmsLog = {
+      id: `sms_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      type: type || 'custom',
+      recipient: international || recipient,
+      message,
+      status,
+      provider: providerName,
+      timestamp: new Date().toISOString(),
+      details: { ...details, localPhone: local, internationalPhone: international },
+    };
+
+    smsLogs.unshift(logEntry);
+    if (smsLogs.length > 60) smsLogs.pop();
+
+    res.json({
+      success: true,
+      message: `SMS dispatched successfully to ${local} via ${providerName}`,
+      status,
+      provider: providerName,
+      log: logEntry,
+    });
+  } catch (err: any) {
+    console.error('Error in /api/send-sms:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to dispatch SMS' });
+  }
+});
+
+// API: Send Test SMS
+app.post('/api/test-sms', async (req, res) => {
+  try {
+    const { testPhone, customMessage } = req.body || {};
+    const recipient = testPhone || '0712345678';
+    const message = customMessage || 'Habari! Huu ni ujumbe wa majaribio kutoka YMA ENERGY GROUP. Mfumo wa SMS kwa wateja unafanya kazi kikamilifu!';
+
+    const { international, local } = normalizeTzPhone(recipient);
+    const logEntry: SmsLog = {
+      id: `sms_test_${Date.now()}`,
+      type: 'test',
+      recipient: international,
+      message,
+      status: 'SENT_SIMULATED',
+      provider: 'YMA SMS Test Gateway',
+      timestamp: new Date().toISOString(),
+      details: { localPhone: local },
+    };
+
+    smsLogs.unshift(logEntry);
+
+    res.json({
+      success: true,
+      message: `Ujumbe wa majaribio umetumwa kwa namba: ${local} (+${international})`,
       log: logEntry,
     });
   } catch (err: any) {

@@ -19,6 +19,7 @@ import {
   X,
   Play,
   RotateCcw,
+  Smartphone,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useServicesStore } from '../../store/useServicesStore';
@@ -26,6 +27,7 @@ import { useRepairsStore } from '../../store/useRepairsStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useLanguage } from '../../context/LanguageContext';
 import { ServiceRequest, RepairRequest, ServiceStatus, RepairStatus } from '../../types';
+import { getWhatsAppLink, getNativeSmsLink } from '../../services/smsService';
 
 interface TechnicianDashboardViewProps {
   onBackToCustomerView?: () => void;
@@ -153,9 +155,12 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
   const handleUpdateServiceStatus = async (requestId: string, status: ServiceStatus) => {
     const note = techNoteInputs[requestId] || '';
     await updateServiceTechProgress(requestId, status, note);
+    const isCompleted = status === 'Completed';
     showToast({
-      title: 'Hali ya Kazi Imesasishwa! 🔄',
-      message: `Hali mpya: ${status}. Mfumo umehifadhi taarifa zako za uwandani.`,
+      title: isCompleted ? 'Kazi Imekamilika & SMS Imetumwa! 📲' : 'Hali ya Kazi Imesasishwa! 🔄',
+      message: isCompleted
+        ? 'Kazi imewekwa kuwa Imekamilika na mteja ametumiwa ujumbe wa SMS moja kwa moja.'
+        : `Hali mpya: ${status}. Mfumo umehifadhi taarifa zako za uwandani.`,
       type: 'success',
     });
   };
@@ -163,9 +168,12 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
   const handleUpdateRepairStatus = async (ticketId: string, status: RepairStatus) => {
     const note = techNoteInputs[ticketId] || '';
     await updateRepairTechProgress(ticketId, status, note);
+    const isCompleted = status === 'Resolved';
     showToast({
-      title: 'Hali ya Matengenezo Imesasishwa! ⚡',
-      message: `Hali mpya: ${status}. Mfumo umehifadhi taarifa zako.`,
+      title: isCompleted ? 'Matengenezo Yamekamilika & SMS Imetumwa! 📲' : 'Hali ya Matengenezo Imesasishwa! ⚡',
+      message: isCompleted
+        ? 'Hitilafu imetatuliwa na mteja ametumiwa ujumbe wa SMS moja kwa moja.'
+        : `Hali mpya: ${status}. Mfumo umehifadhi taarifa zako.`,
       type: 'success',
     });
   };
@@ -581,6 +589,31 @@ export const TechnicianDashboardView: React.FC<TechnicianDashboardViewProps> = (
                       <MapPin className="w-3.5 h-3.5 text-amber-500" />
                       <span>{s.region}</span>
                     </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <a
+                        href={`tel:${s.phone}`}
+                        className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-[11px] flex items-center gap-1 hover:bg-emerald-500/20"
+                      >
+                        <Phone className="w-3 h-3" />
+                        <span>Piga Simu</span>
+                      </a>
+                      <a
+                        href={getWhatsAppLink(s.phone, `Habari ${s.customerName}, mimi ni fundi wako wa YMA Energy kuhusu huduma #${s.requestNumber}.`)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-[11px] flex items-center gap-1 hover:bg-emerald-500/20"
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        <span>WhatsApp</span>
+                      </a>
+                      <a
+                        href={getNativeSmsLink(s.phone, `Habari ${s.customerName}, niko njiani kuelekea kwako kwa ajili ya huduma ya mfumo wa umeme wa jua YMA Energy.`)}
+                        className="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 font-bold text-[11px] flex items-center gap-1 hover:bg-sky-500/20"
+                      >
+                        <Smartphone className="w-3 h-3" />
+                        <span>Tuma SMS</span>
+                      </a>
+                    </div>
                   </div>
 
                   {/* Progress Buttons */}

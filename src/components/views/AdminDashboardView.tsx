@@ -47,11 +47,15 @@ import {
   Eye,
   EyeOff,
   Power,
+  Smartphone,
+  Send,
+  CheckCheck,
 } from 'lucide-react';
 import { getYouTubeEmbedUrl, detectVideoAspectRatio, VideoAspectRatio } from '../common/HowToUseAppSection';
 import { SOCIAL_PLATFORMS, SOCIAL_MEDIA_CONFIG } from '../../config/socialLinks';
 import { db } from '../../lib/firebase';
 import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { sendCustomerSms, getNativeSmsLink, getWhatsAppLink } from '../../services/smsService';
 import { useLanguage } from '../../context/LanguageContext';
 import { useProductStore } from '../../store/useProductStore';
 import { useOrdersStore } from '../../store/useOrdersStore';
@@ -95,7 +99,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const isManager = currentUser?.role === 'MANAGER';
 
   const [activeAdminTab, setActiveAdminTab] = useState<
-    'inventory' | 'orders' | 'services' | 'branches' | 'gateways' | 'repairs' | 'warranty' | 'reviews' | 'inquiries' | 'emails' | 'users' | 'firebase'
+    'inventory' | 'orders' | 'services' | 'branches' | 'gateways' | 'repairs' | 'warranty' | 'reviews' | 'inquiries' | 'sms' | 'emails' | 'users' | 'firebase'
   >('inventory');
 
   const { branches, addBranch, updateBranch, deleteBranch, initFirebaseSync: initBranchSync } = useBranchStore();
@@ -334,6 +338,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   // Live Email Alerts Log from Firestore
   const [emailAlertsList, setEmailAlertsList] = useState<any[]>([]);
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
+  // Live SMS Alerts Log from Firestore
+  const [smsLogsList, setSmsLogsList] = useState<any[]>([]);
+  const [isSendingTestSms, setIsSendingTestSms] = useState(false);
+  const [testSmsPhone, setTestSmsPhone] = useState('');
+  const [testSmsMessage, setTestSmsMessage] = useState('');
 
   useEffect(() => {
     const inquiriesRef = collection(db, 'inquiries');
@@ -358,9 +367,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       (err) => console.error('Error fetching email logs:', err)
     );
 
+    const smsLogsRef = collection(db, 'sms_notifications');
+    const unsubscribeSms = onSnapshot(
+      smsLogsRef,
+      (snapshot) => {
+        const docs = snapshot.docs.map((d) => ({ ...(d.data() as any), _docId: d.id }));
+        docs.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        setSmsLogsList(docs);
+      },
+      (err) => console.error('Error fetching SMS logs:', err)
+    );
+
     return () => {
       unsubscribeInquiries();
       unsubscribeEmails();
+      unsubscribeSms();
     };
   }, []);
 
@@ -609,6 +630,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             { id: 'services', label: 'Services & Surveyors', icon: Wrench, count: serviceRequests.length, show: true },
             { id: 'branches', label: '🏢 Matawi & Mipangilio', icon: Building2, count: branches.length, show: true },
             { id: 'inquiries', label: 'Ujumbe wa Wateja', icon: MessageSquare, count: inquiriesList.length, highlight: true, show: true },
+            { id: 'sms', label: '📱 SMS Alerts & Wateja', icon: Smartphone, count: smsLogsList.length, highlight: true, show: true },
             { id: 'emails', label: '📧 Email Alerts', icon: Mail, count: emailAlertsList.length, highlight: true, show: true },
             { id: 'gateways', label: 'Payment Gateways', icon: CreditCard, count: gateways.length, show: true },
             { id: 'users', label: 'Staff & Roles Control', icon: Users, count: safeUsers.length, show: isSuperAdmin || isStaffAdmin },
@@ -1008,8 +1030,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           if (selectedTech) {
                             assignEngineer(sr.id, selectedTech.name, selectedTech.phone, selectedTech.id, selectedTech.email);
                             showToast({
-                              title: 'Mhandisi Amepangwa! 🛠️',
-                              message: `Huduma imetumwa kwa fundi: ${selectedTech.name}.`,
+                              title: 'Mhandisi Amepangwa & SMS Imetumwa! 📲',
+                              message: `Huduma imetumwa kwa fundi ${selectedTech.name} na mteja (${sr.customerName}) ametumiwa ujumbe wa SMS moja kwa moja.`,
                               type: 'success',
                             });
                           }
@@ -1031,18 +1053,71 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center flex-wrap gap-2">
                       {sr.assignedTechnician && (
                         <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20">
                           Fundi: {sr.assignedTechnician} ({sr.techResponseStatus || 'PENDING'})
                         </span>
                       )}
 
-                      <button
-                        onClick={() => updateRequestStatus(sr.id, 'Completed')}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                      {/* Manual SMS Resend / Trigger Dropdown */}
+                      <div className="relative inline-block text-left">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const promptOption = window.confirm(
+                              `Tuma SMS ya Uthibitisho kwa Mteja (${sr.customerName} - ${sr.phone})?\n\nOK = Tuma SMS ya "Fundi Amepangiwa"\nCancel = Usitume`
+                            );
+                            if (promptOption) {
+                              sendCustomerSms({
+                                recipient: sr.phone,
+                                customerName: sr.customerName,
+                                requestNumber: sr.requestNumber,
+                                serviceName: sr.serviceName,
+                                technicianName: sr.assignedTechnician || 'Mhandisi Wetu',
+                                technicianPhone: sr.assignedTechnicianPhone,
+                                type: 'technician_assigned',
+                              }).then((res) => {
+                                showToast({
+                                  title: res.success ? 'SMS Imetumwa! 📲' : 'Hitilafu ya SMS ❌',
+                                  message: res.message,
+                                  type: res.success ? 'success' : 'error',
+                                });
+                              });
+                            }
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl border border-sky-500/30 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 font-bold text-xs flex items-center gap-1 hover:bg-sky-100 dark:hover:bg-sky-900/50"
+                          title="Tuma Ujumbe wa SMS kwa Mteja"
+                        >
+                          <Smartphone className="w-3.5 h-3.5" />
+                          <span>SMS kwa Mteja</span>
+                        </button>
+                      </div>
+
+                      <a
+                        href={getWhatsAppLink(sr.phone, `Habari ${sr.customerName}, kuhusu ombi lako la huduma #${sr.requestNumber} (${sr.serviceName}) kutoka YMA Energy Group.`)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-bold text-xs flex items-center gap-1 hover:bg-emerald-500/20"
+                        title="Tuma Ujumbe wa WhatsApp"
                       >
-                        Kazi Imekamilika
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>WhatsApp</span>
+                      </a>
+
+                      <button
+                        onClick={() => {
+                          updateRequestStatus(sr.id, 'Completed');
+                          showToast({
+                            title: 'Kazi Imekamilika & SMS Imetumwa! 📲',
+                            message: `Kazi imewekwa kuwa imekamilika na SMS ya uthibitisho imetumwa kwa mteja (${sr.phone}).`,
+                            type: 'success',
+                          });
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm"
+                      >
+                        <CheckCheck className="w-3.5 h-3.5" />
+                        <span>Kazi Imekamilika</span>
                       </button>
                     </div>
                   </div>
@@ -2398,6 +2473,305 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* SUB-TAB: LIVE CUSTOMER SMS NOTIFICATION LOGS & SENDER */}
+      {activeAdminTab === 'sms' && (
+        <div className="space-y-6">
+          {/* Top Banner Card */}
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 text-white border border-slate-800 shadow-xl space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+                  <Smartphone className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
+                    <span>Mfumo wa Ujumbe wa SMS kwa Wateja</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      LIVE GATEWAY
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Wateja wanapokea SMS kiotomatiki mara moja fundi anapopangiwa na kazi inapowekwa kuwa imekamilika.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300">
+                  Sender ID: <strong className="text-amber-400">YMA_ENERGY</strong>
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Jumla ya SMS Zilizotumwa</p>
+                <p className="text-xl font-black text-white mt-1">{smsLogsList.length}</p>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20">
+                <p className="text-[11px] text-sky-400 font-bold uppercase tracking-wider">Fundi Apangiwa</p>
+                <p className="text-xl font-black text-sky-300 mt-1">
+                  {smsLogsList.filter((s) => s.type === 'technician_assigned' || s.type === 'repair_assigned').length}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                <p className="text-[11px] text-emerald-400 font-bold uppercase tracking-wider">Kazi Imekamilika</p>
+                <p className="text-xl font-black text-emerald-300 mt-1">
+                  {smsLogsList.filter((s) => s.type === 'job_completed' || s.type === 'repair_completed').length}
+                </p>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                <p className="text-[11px] text-amber-400 font-bold uppercase tracking-wider">Hali ya Gateway</p>
+                <p className="text-sm font-black text-amber-300 mt-2 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Inafanya Kazi
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Test SMS Dispatch Card */}
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Send className="w-4 h-4 text-sky-500" />
+                  <span>Jaribu Kutuma SMS ya Majaribio (Test SMS)</span>
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Ingiza namba yoyote ya simu (mfano 0712345678) ili kujiridhisha kuwa mteja anapokea ujumbe.
+                </p>
+              </div>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!testSmsPhone) {
+                  showToast({ title: 'Weka Namba ya Simu', message: 'Tafadhali weka namba ya simu ya mpokeaji.', type: 'warning' });
+                  return;
+                }
+                setIsSendingTestSms(true);
+                try {
+                  const res = await sendCustomerSms({
+                    recipient: testSmsPhone,
+                    message: testSmsMessage || 'Habari! Huu ni ujumbe wa majaribio kutoka YMA ENERGY GROUP. Mfumo wa SMS kwa wateja unafanya kazi kikamilifu!',
+                    type: 'test',
+                    customerName: 'Mteja wa Majaribio',
+                  });
+                  if (res.success) {
+                    showToast({
+                      title: 'SMS ya Majaribio Imetumwa! 📲',
+                      message: res.message || `Ujumbe umetumwa kwa ${testSmsPhone}.`,
+                      type: 'success',
+                    });
+                    setTestSmsPhone('');
+                    setTestSmsMessage('');
+                  } else {
+                    showToast({ title: 'Hitilafu', message: res.message, type: 'error' });
+                  }
+                } catch (err: any) {
+                  showToast({ title: 'Hitilafu', message: err.message, type: 'error' });
+                } finally {
+                  setIsSendingTestSms(false);
+                }
+              }}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+            >
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Namba ya Simu ya Mteja
+                </label>
+                <input
+                  type="text"
+                  placeholder="07XXXXXXXX au 255XXXXXXXXX"
+                  value={testSmsPhone}
+                  onChange={(e) => setTestSmsPhone(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Ujumbe Maalum (Hiari)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Acha wazi kutumia ujumbe wa kawaida..."
+                  value={testSmsMessage}
+                  onChange={(e) => setTestSmsMessage(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  disabled={isSendingTestSms}
+                  className="w-full p-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isSendingTestSms ? 'Inatuma...' : 'Tuma SMS ya Jaribio'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* SMS History List */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-500" />
+                <span>Kumbukumbu za Ujumbe wa SMS Zilizotumwa kwa Wateja ({smsLogsList.length})</span>
+              </h3>
+            </div>
+
+            {smsLogsList.length === 0 ? (
+              <div className="p-10 text-center rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                <Smartphone className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Hakuna ujumbe wa SMS uliorekodiwa bado.
+                </p>
+                <p className="text-xs text-slate-400">
+                  Pindi mhandisi atakapopangiwa huduma au kazi ikikamilika, ujumbe utatumwa kwa mteja na kuonekana hapa moja kwa moja.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {smsLogsList.map((log) => {
+                  const isTechAssigned = log.type === 'technician_assigned' || log.type === 'repair_assigned';
+                  const isCompleted = log.type === 'job_completed' || log.type === 'repair_completed';
+
+                  return (
+                    <div
+                      key={log._docId || log.id}
+                      className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${
+                              isTechAssigned
+                                ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
+                                : isCompleted
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                            }`}
+                          >
+                            {isTechAssigned
+                              ? '👷‍♂️ Fundi Apangiwa'
+                              : isCompleted
+                              ? '✅ Kazi Imekamilika'
+                              : '📱 Taarifa ya SMS'}
+                          </span>
+                          <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100">
+                            Mteja: {log.customerName || 'Mteja'} ({log.recipient})
+                          </span>
+                          {log.requestNumber && (
+                            <span className="font-mono text-[11px] text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">
+                              #{log.requestNumber}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {log.createdAt ? new Date(log.createdAt).toLocaleString() : 'Hivi Punde'}
+                          </span>
+                          <button
+                            onClick={() => {
+                              promptDelete(
+                                'Futa Kumbukumbu ya SMS',
+                                'Je, una uhakika unataka kufuta kumbukumbu hii ya SMS?',
+                                async () => {
+                                  try {
+                                    await deleteDoc(doc(db, 'sms_notifications', log._docId || log.id));
+                                    showToast({ title: 'Imefutwa', message: 'Kumbukumbu imefutwa!', type: 'success' });
+                                  } catch (err) {
+                                    showToast({ title: 'Hitilafu', message: 'Imeshindwa kufuta.', type: 'error' });
+                                  }
+                                }
+                              );
+                            }}
+                            className="text-rose-500 hover:text-rose-600 p-1"
+                            title="Futa Kumbukumbu"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* SMS Text Content */}
+                      <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200">
+                        {log.message}
+                      </div>
+
+                      {/* Footer Info & Quick Contact Options */}
+                      <div className="flex items-center justify-between flex-wrap gap-2 text-xs pt-1">
+                        <div className="flex items-center gap-3">
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-[10px] font-extrabold flex items-center gap-1">
+                            <CheckCheck className="w-3 h-3" />
+                            {log.status || 'SENT'}
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            Provider: <strong className="text-slate-700 dark:text-slate-300">{log.provider || 'YMA SMS'}</strong>
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {/* Resend SMS Button */}
+                          <button
+                            onClick={() => {
+                              sendCustomerSms({
+                                recipient: log.recipient,
+                                message: log.message,
+                                type: log.type,
+                                customerName: log.customerName,
+                                requestNumber: log.requestNumber,
+                              }).then((res) => {
+                                showToast({
+                                  title: res.success ? 'SMS Imetumwa Tena! 📲' : 'Hitilafu ❌',
+                                  message: res.message,
+                                  type: res.success ? 'success' : 'error',
+                                });
+                              });
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-300 text-[11px] font-bold border border-sky-200 dark:border-sky-800 hover:bg-sky-100"
+                          >
+                            Tuma Tena
+                          </button>
+
+                          {/* WhatsApp Link */}
+                          <a
+                            href={getWhatsAppLink(log.recipient, log.message)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 flex items-center gap-1"
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            <span>WhatsApp</span>
+                          </a>
+
+                          {/* Native SMS Link */}
+                          <a
+                            href={getNativeSmsLink(log.recipient, log.message)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold hover:bg-slate-200 flex items-center gap-1"
+                          >
+                            <Smartphone className="w-3 h-3" />
+                            <span>SMS ya Simu</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

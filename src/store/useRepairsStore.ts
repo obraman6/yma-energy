@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { RepairRequest, RepairStatus } from '../types';
 import { db } from '../lib/firebase';
 import { sendAdminEmailTrigger } from '../services/emailService';
+import { sendCustomerSms } from '../services/smsService';
 import { useNotificationStore } from './useNotificationStore';
 import {
   collection,
@@ -187,6 +188,19 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
         type: 'maintenance',
         isPush: true,
       });
+
+      // Send real-time SMS to Customer notifying technician is dispatched
+      if (target.phone) {
+        sendCustomerSms({
+          recipient: target.phone,
+          customerName: target.customerName,
+          requestNumber: target.requestNumber,
+          technicianName: techName,
+          technicianPhone: assignedPhone,
+          serviceName: target.equipmentType ? `Matengenezo: ${target.equipmentType}` : 'Matengenezo ya Sola',
+          type: 'repair_assigned',
+        }).catch((err) => console.error('Error dispatching repair technician assigned SMS to customer:', err));
+      }
     }
   },
 
@@ -268,10 +282,25 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
         type: 'maintenance',
         isPush: true,
       });
+
+      // If repair is resolved/completed, send instant SMS confirmation to the customer
+      if (isResolved && target.phone) {
+        sendCustomerSms({
+          recipient: target.phone,
+          customerName: target.customerName,
+          requestNumber: target.requestNumber,
+          technicianName: target.assignedTechnician || 'Fundi wa Dharura',
+          technicianPhone: techPhone,
+          serviceName: target.equipmentType ? `Matengenezo: ${target.equipmentType}` : 'Matengenezo ya Sola',
+          type: 'repair_completed',
+        }).catch((err) => console.error('Error dispatching repair completed SMS to customer:', err));
+      }
     }
   },
 
   updateRepairStatus: async (ticketId, status) => {
+    const target = get().repairRequests.find((r) => r.id === ticketId);
+
     set((state) => ({
       repairRequests: state.repairRequests.map((r) =>
         r.id === ticketId ? { ...r, status } : r
@@ -282,6 +311,21 @@ export const useRepairsStore = create<RepairsState>((set, get) => ({
       await updateDoc(doc(db, 'repairs', ticketId), { status });
     } catch (err) {
       console.error('Error updating repair status in Firebase:', err);
+    }
+
+    if (target && target.phone) {
+      const isResolved = (status as string) === 'Resolved' || (status as string) === 'Completed' || (status as string) === 'Imerekebishwa';
+      if (isResolved) {
+        sendCustomerSms({
+          recipient: target.phone,
+          customerName: target.customerName,
+          requestNumber: target.requestNumber,
+          technicianName: target.assignedTechnician || 'Fundi wa Dharura',
+          technicianPhone: target.assignedTechnicianPhone,
+          serviceName: target.equipmentType ? `Matengenezo: ${target.equipmentType}` : 'Matengenezo ya Sola',
+          type: 'repair_completed',
+        }).catch((err) => console.error('Error dispatching repair completed SMS to customer (admin):', err));
+      }
     }
   },
 }));
